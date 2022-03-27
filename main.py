@@ -6,7 +6,7 @@ import time
 sys.path.append(os.path.join("pkg"))
 from model import Model
 from agentRnd import AgentRnd
-
+from agentTest import AgentTest
 
 ## Metodo utilizado para permitir que o usuario construa o labirindo clicando em cima
 def buildMaze(model):
@@ -47,16 +47,17 @@ def main():
     model.maze.board.posAgent
     model.maze.board.posGoal
     # Define a posição inicial do agente no ambiente - corresponde ao estado inicial
-    model.setAgentPos(model.maze.board.posAgent[0],model.maze.board.posAgent[1])
-    model.setGoalPos(model.maze.board.posGoal[0],model.maze.board.posGoal[1])  
+    model.setAgentPos(model.maze.board.posAgent[0], model.maze.board.posAgent[1])
+    model.setGoalPos(model.maze.board.posGoal[0], model.maze.board.posGoal[1])
     model.draw()
 
     # Cria um agente
     agent = AgentRnd(model,configDict)
+    agentTest = AgentTest(model,configDict)
 
     ## Ciclo de raciocínio do agente
-    agent.deliberate()
-    while agent.deliberate() != -1:
+    agentTest.deliberate()
+    while agentTest.deliberate() != -1:
         model.draw()
         time.sleep(0.3) # para dar tempo de visualizar as movimentacoes do agente no labirinto
     model.draw()    
