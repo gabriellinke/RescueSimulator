@@ -1,5 +1,6 @@
 from view import View
 from maze import Maze
+from state import State
 
 class Model:
     """Model implementa um ambiente na forma de um labirinto com paredes e com um agente.
@@ -67,7 +68,7 @@ class Model:
             return -1
         if (to_col >= self.maze.maxColumns or to_row >= self.maze.maxRows):
             return -1
-        
+
         ## vai para cima de uma parede
         if self.maze.walls[to_row][to_col] == 1:
             return -1
@@ -124,8 +125,10 @@ class Model:
         """
             Esse metodo deve ser alterado de acordo com o action a ser passado
         """
-        #result = plan.do()
-        #step = result[0]
+
+        # result = plan.do()
+        # step = result[0]
+
         if action == "N":
             row = self.agentPos[0] - 1
             col = self.agentPos[1]
@@ -152,8 +155,10 @@ class Model:
             col = self.agentPos[1] - 1
         
         if (self.isPossibleToMove(self.agentPos[0], self.agentPos[1], row, col) == 1):
-            self.setAgentPos(row, col)            
-    
+            self.setAgentPos(row, col)
+            return [True, State(row, col)]
+
+        return [False, State(row, col)]
     
     def getVictimVitalSignals(self, victimId):
         """ retorna os sinais vitais da vítima identificada pelo id

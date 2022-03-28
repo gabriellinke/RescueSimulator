@@ -13,7 +13,7 @@ from random import randint
 from maze import Maze
 
 ## Importa o algoritmo para o plano
-from randomPlan import RandomPlan
+from testPlan import TestPlan
 
 ##Importa o Planner
 sys.path.append(os.path.join("pkg", "planner"))
@@ -66,7 +66,7 @@ class AgentTest:
         self.costAll = 0
 
         ## Cria a instancia do plano para se movimentar aleatoriamente no labirinto (sem nenhuma acao) 
-        self.plan = RandomPlan(model.rows, model.columns, self.prob.goalState, initial, "goal", self.mesh)
+        self.plan = TestPlan(model.rows, model.columns, self.prob.goalState, initial, "goal", self.mesh)
 
         ## adicionar crencas sobre o estado do ambiente ao plano - neste exemplo, o agente faz uma copia do que existe no ambiente.
         ## Em situacoes de exploracao, o agente deve aprender em tempo de execucao onde estao as paredes
@@ -121,6 +121,10 @@ class AgentTest:
         if victimId > 0:
             print ("vitima encontrada em ", self.currentState, " id: ", victimId, " sinais vitais: ", self.victimVitalSignalsSensor(victimId))
             print ("vitima encontrada em ", self.currentState, " id: ", victimId, " dif de acesso: ", self.victimDiffOfAcessSensor(victimId))
+            if(self.prob.mazeBelief.victims[self.currentState.row][self.currentState.col] == 0):
+                self.prob.mazeBelief.victims[self.currentState.row][self.currentState.col] = victimId
+                self.prob.mazeBelief.vitalSignals.append(self.victimVitalSignalsSensor(victimId))
+                # self.prob.mazeBelief.diffAccess.append(self.victimDiffOfAcessSensor(victimId))
 
         ## Define a proxima acao a ser executada
         ## currentAction eh uma tupla na forma: <direcao>, <state>
@@ -142,7 +146,26 @@ class AgentTest:
 
         ## Passa a acao para o modelo
         result = self.model.go(action)
-        
+        # Se a ação foi executada ela foi completada com sucesso e posso fazer algo com isso
+        if result[0]:
+            print('Execução funcionou: ', result[0], action)
+
+        # Se a ação não foi executada e a Action solicitada tiver sido N, S, L, O há uma parede na direção da action
+        # Se a ação não foi executada e a Action solicitada tiver sido NO, NE, SO, SE
+        # Podem haver paredes nas laterais ou na diagonal - Acredito que não consigo saber onde fica a parede
+        else:
+            print('Execução não funcionou: ', result[0], action)
+            # Adiciona parede no mapa do robô - Se o erro foi tentando ir pra diagonal não adiciono parede
+            if action != 'NO' and action != 'NE' and action != 'SO' and action != 'SE':
+                self.prob.mazeBelief.walls[result[1].row][result[1].col] = 1
+                print('Add a wall at: ', result[1].row, result[1].col)
+                # Adiciona parede no plano
+                self.plan.walls.append((result[1].row, result[1].col))
+
+        # Para debugar quais paredes foram encontradas até o momento
+        # print(self.plan.walls)
+
+
         ## Se o resultado for True, significa que a acao foi completada com sucesso, e ja pode ser removida do plano
         ## if (result[1]): ## atingiu objetivo ## TACLA 20220311
         ##    del self.plan[0]
