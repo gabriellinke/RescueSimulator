@@ -14,6 +14,7 @@ from maze import Maze
 
 ## Importa o algoritmo para o plano
 from testPlan import TestPlan
+from onlineDFSPlan import OnlineDFSPlan
 
 ##Importa o Planner
 sys.path.append(os.path.join("pkg", "planner"))
@@ -66,15 +67,14 @@ class AgentTest:
         self.costAll = 0
 
         ## Cria a instancia do plano para se movimentar aleatoriamente no labirinto (sem nenhuma acao) 
-        self.plan = TestPlan(model.rows, model.columns, self.prob.goalState, initial, "goal", self.mesh)
+        self.plan = OnlineDFSPlan(model.rows, model.columns, self.prob.goalState, initial, "goal", self.mesh)
 
         ## adicionar crencas sobre o estado do ambiente ao plano - neste exemplo, o agente faz uma copia do que existe no ambiente.
         ## Em situacoes de exploracao, o agente deve aprender em tempo de execucao onde estao as paredes
 
         # Quando tento executar uma ação e ela dá erro, adiciono a posição que deu erro no mapa de paredes
-        self.plan.setWalls(self.prob.mazeBelief.walls)
-        print('walls: ', self.plan.walls)
-        #
+        self.plan.setWalls(self.model.maze.walls)
+
         ## Adiciona o(s) planos a biblioteca de planos do agente
         self.libPlan=[self.plan]
 
@@ -110,6 +110,14 @@ class AgentTest:
         self.tl -= self.prob.getActionCost(self.previousAction)
         print("Tempo disponivel: ", self.tl)
 
+        if(self.tl <= 0):
+            print("O tempo acabou!")
+            del self.libPlan[0]  ## retira plano da biblioteca
+            print(self.prob.mazeBelief.walls)
+            print(self.prob.mazeBelief.victims)
+            print(self.prob.mazeBelief.vitalSignals)
+            print(self.prob.mazeBelief.diffAccess)
+
         ## Verifica se atingiu o estado objetivo
         ## Poderia ser outra condição, como atingiu o custo máximo de operação
         if self.prob.goalTest(self.currentState):
@@ -124,7 +132,7 @@ class AgentTest:
             if(self.prob.mazeBelief.victims[self.currentState.row][self.currentState.col] == 0):
                 self.prob.mazeBelief.victims[self.currentState.row][self.currentState.col] = victimId
                 self.prob.mazeBelief.vitalSignals.append(self.victimVitalSignalsSensor(victimId))
-                # self.prob.mazeBelief.diffAccess.append(self.victimDiffOfAcessSensor(victimId))
+                self.prob.mazeBelief.diffAccess.append(self.victimDiffOfAcessSensor(victimId))
 
         ## Define a proxima acao a ser executada
         ## currentAction eh uma tupla na forma: <direcao>, <state>
