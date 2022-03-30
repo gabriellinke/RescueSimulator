@@ -116,18 +116,13 @@ class OnlineDFSPlan:
 
         ## Tenta encontrar um movimento possivel dentro do tabuleiro 
         result = self.getNextPosition()
-        print('result: ', result[0], result[1]) #'L' , '01'
-        currentPos = (self.currentState.row, self.currentState.col)# '0','0'
-        nextPos = (result[1].row, result[1].col)# '0','1'
+        currentPos = (self.currentState.row, self.currentState.col)
+        nextPos = (result[1].row, result[1].col)
 
-        if self.isPossibleToMove(result[1]) and result[0] != 'nop': #dá pra ir para '0','1'?
-            if (currentPos, result[0]) not in self.result.keys():# se '00', 'L' não está nos results
-                self.result[(currentPos, result[0])] = nextPos# O resultado de '00', 'L' é '01'
-                # print('result ', self.result)
-
-                self.unbacktracked[nextPos].append(currentPos) #de '01' dá para voltar para '00'
-                print('unbacktracked ', self.unbacktracked)
-        # else:
+        if self.isPossibleToMove(result[1]) and result[0] != 'nop': 
+            if (currentPos, result[0]) not in self.result.keys():
+                self.result[(currentPos, result[0])] = nextPos
+                self.unbacktracked[nextPos].append(currentPos)
 
 
         return result

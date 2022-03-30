@@ -182,7 +182,6 @@ class AgentTest:
             if action != 'NO' and action != 'NE' and action != 'SO' and action != 'SE':
                 if position.row > 0 and position.col > 0 and position.row < self.prob.mazeBelief.maxRows and position.col < self.prob.mazeBelief.maxColumns:
                     self.prob.mazeBelief.walls[position.row][position.col] = 1
-                    print('Add a wall at: ', position.row, position.col)
 
 
     ## Metodo que pega a posicao real do agente no ambiente
