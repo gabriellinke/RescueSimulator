@@ -116,6 +116,7 @@ class AgentTest:
             print(self.prob.mazeBelief.victims)
             print(self.prob.mazeBelief.vitalSignals)
             print(self.prob.mazeBelief.diffAccess)
+            map = self.plan.getMazeMap()
 
         ## Verifica se atingiu o estado objetivo
         ## Poderia ser outra condição, como atingiu o custo máximo de operação

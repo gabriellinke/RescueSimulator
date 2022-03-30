@@ -1,6 +1,6 @@
 from random import randint
 from state import State
-
+import math
 
 class OnlineDFSPlan:
     def __init__(self, maxRows, maxColumns, goal, initialState, name="none", mesh="square"):
@@ -136,3 +136,19 @@ class OnlineDFSPlan:
 
         nextMove = self.move()
         return (nextMove[1], self.goalPos == State(nextMove[0][0], nextMove[0][1]))
+
+    def getMazeMap(self):
+        """
+        Método utilizado para retornar um mapa dos locais percorridos para ser usado no LRTA*
+
+        Retorna uma matriz com valor da distancia de Manhattan até o estado inicial nas coordenadas que foram percorridas e infinito nas outras 
+        """
+        values = set(self.result.values())
+        map = [[math.inf for j in range(self.maxColumns)] for i in range(self.maxRows)]
+        map[self.initialState.row][self.initialState.col] = 0
+        for value in values:  
+            map[value[0]][value[1]] = abs(value[0] - self.initialState.row) + abs(value[1] - self.initialState.col)
+
+        for line in map:
+            print(line)
+        return map
