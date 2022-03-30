@@ -40,10 +40,10 @@ class Problem:
         """Retorna o custo da ação.
         @param action:
         @return custo da ação"""
-        if (action=="nop"):
-            return 0
+        # if (action=="nop"):
+        #     return 0
 
-        if (action == "N" or action == "L" or action == "O" or action == "S"):   
+        if (action == "N" or action == "L" or action == "O" or action == "S" or action == "nop"):   
             return 1.0
         
         return 1.5

@@ -128,7 +128,9 @@ class Model:
 
         # result = plan.do()
         # step = result[0]
-
+        if action == "nop":
+            row = self.agentPos[0]
+            col = self.agentPos[1]
         if action == "N":
             row = self.agentPos[0] - 1
             col = self.agentPos[1]
@@ -154,11 +156,14 @@ class Model:
             row = self.agentPos[0] + 1
             col = self.agentPos[1] - 1
         
+        if (col < 0 or row < 0) or (col >= self.maze.maxColumns or row >= self.maze.maxRows):
+            return False
+
         if (self.isPossibleToMove(self.agentPos[0], self.agentPos[1], row, col) == 1):
             self.setAgentPos(row, col)
-            return [True, State(row, col)]
+            return True
 
-        return [False, State(row, col)]
+        return False
     
     def getVictimVitalSignals(self, victimId):
         """ retorna os sinais vitais da vítima identificada pelo id

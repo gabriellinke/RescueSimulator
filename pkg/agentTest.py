@@ -39,7 +39,6 @@ class AgentTest:
         ## Cria a instância do problema na mente do agente (sao suas crencas)
         self.prob = Problem()
         self.prob.createMaze(model.rows, model.columns, Maze(model.rows, model.columns))
-        print('\nCrenças das paredes\n', self.prob.mazeBelief.walls, '\n\n', model.maze.walls)
     
         # O agente le sua posica no ambiente por meio do sensor
         initial = self.positionSensor()
@@ -155,30 +154,36 @@ class AgentTest:
         ## Passa a acao para o modelo
         result = self.model.go(action)
         # Se a ação foi executada ela foi completada com sucesso e posso fazer algo com isso
-        if result[0]:
-            print('Execução funcionou: ', result[0], action)
+        if result:
+            print('Execução funcionou: ', result, action)
 
         # Se a ação não foi executada e a Action solicitada tiver sido N, S, L, O há uma parede na direção da action
         # Se a ação não foi executada e a Action solicitada tiver sido NO, NE, SO, SE
         # Podem haver paredes nas laterais ou na diagonal - Acredito que não consigo saber onde fica a parede
         else:
-            print('Execução não funcionou: ', result[0], action)
+            print('Execução não funcionou: ', result, action)
+
+            # Encontro qual seria a posição que eu estaria caso a ação desse certo. 
+            # Se for uma posição válida no mapa, quer dizer que tem parede
+
+            movePos = {"N": (-1, 0),
+                    "S": (1, 0),
+                    "L": (0, 1),
+                    "O": (0, -1),
+                    "NE": (-1, 1),
+                    "NO": (-1, -1),
+                    "SE": (1, 1),
+                    "SO": (1, -1),
+                    "nop": (0, 0)}
+
+            position = State(self.currentState.row + movePos[action][0], self.currentState.col + movePos[action][1])
+
             # Adiciona parede no mapa do robô - Se o erro foi tentando ir pra diagonal não adiciono parede
             if action != 'NO' and action != 'NE' and action != 'SO' and action != 'SE':
-                self.prob.mazeBelief.walls[result[1].row][result[1].col] = 1
-                print('Add a wall at: ', result[1].row, result[1].col)
-                # Adiciona parede no plano
-                self.plan.walls.append((result[1].row, result[1].col))
+                if position.row > 0 and position.col > 0 and position.row < self.prob.mazeBelief.maxRows and position.col < self.prob.mazeBelief.maxColumns:
+                    self.prob.mazeBelief.walls[position.row][position.col] = 1
+                    print('Add a wall at: ', position.row, position.col)
 
-        # Para debugar quais paredes foram encontradas até o momento
-        # print(self.plan.walls)
-
-
-        ## Se o resultado for True, significa que a acao foi completada com sucesso, e ja pode ser removida do plano
-        ## if (result[1]): ## atingiu objetivo ## TACLA 20220311
-        ##    del self.plan[0]
-        ##    self.actionDo((2,1), True)
-            
 
     ## Metodo que pega a posicao real do agente no ambiente
     def positionSensor(self):

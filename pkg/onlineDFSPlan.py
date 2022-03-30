@@ -15,13 +15,12 @@ class OnlineDFSPlan:
         self.goalPos = goal
         self.actions = []
 
-        self.s = None  # Current state
-        self.a = None  # Action
         self.untried = dict()  # key = estado s (x,y) -> mostra um array de ações ainda não tentadas no estado
         self.unbacktracked = dict()  # key = estado s (x,y) -> mostra uma fila de estados que levaram ao estado s
         for i in range(maxRows):
             for j in range(maxColumns):
-                self.untried[(i, j)] = ["N", "S", "L", "O", "NE", "NO", "SE", "SO"]
+                self.untried[(i, j)] = ["S", "L", "SE", "O", "NE", "NO", "N", "SO"]
+                # self.untried[(i, j)] = ["SE", "S", "L", "NE", "SO", "N", "NO", "O"]
                 self.unbacktracked[(i, j)] = []
 
         self.result = {}  # key = estado s (x,y) e ação ("NO", "NE", ...) -> mostra o estado resultado s' após executar ação a partir de s
@@ -88,7 +87,8 @@ class OnlineDFSPlan:
                    "SO": (1, -1)}
 
         if len(possibilities) > 0:
-            rand = randint(0, len(possibilities)-1)
+            # rand = randint(0, len(possibilities)-1)
+            rand = 0
             movDirection = possibilities[rand]
 
             possibilities.pop(rand)
@@ -97,10 +97,14 @@ class OnlineDFSPlan:
             state = State(self.currentState.row + movePos[movDirection][0],
                           self.currentState.col + movePos[movDirection][1])
         else:
-            backtrackState = self.unbacktracked[position].pop(0)
-            state = State(backtrackState[0], backtrackState[1])
-            # To-do: ver qual a movDirection
-            movDirection = 'O'
+            if len(self.unbacktracked[position]) > 0:
+                backtrackState = self.unbacktracked[position].pop(0)
+                state = State(backtrackState[0], backtrackState[1])
+                direction = (backtrackState[0] - position[0], backtrackState[1] - position[1])
+                movDirection = list(movePos.keys())[list(movePos.values()).index(direction)]
+            else:
+                state = self.currentState
+                movDirection = 'nop'
         return movDirection, state
 
 
@@ -112,22 +116,19 @@ class OnlineDFSPlan:
 
         ## Tenta encontrar um movimento possivel dentro do tabuleiro 
         result = self.getNextPosition()
-        print('result: ', result[0], result[1])
-        currentPos = (self.currentState.row, self.currentState.col)
-        nextPos = (result[1].row, result[1].col)
+        print('result: ', result[0], result[1]) #'L' , '01'
+        currentPos = (self.currentState.row, self.currentState.col)# '0','0'
+        nextPos = (result[1].row, result[1].col)# '0','1'
 
-        if self.isPossibleToMove(result[1]):
-            if (currentPos, result[0]) not in self.result.keys():
-                self.result[(currentPos, result[0])] = nextPos
-                print('result ', self.result)
+        if self.isPossibleToMove(result[1]) and result[0] != 'nop': #dá pra ir para '0','1'?
+            if (currentPos, result[0]) not in self.result.keys():# se '00', 'L' não está nos results
+                self.result[(currentPos, result[0])] = nextPos# O resultado de '00', 'L' é '01'
+                # print('result ', self.result)
 
-                self.unbacktracked[nextPos].append(currentPos)
+                self.unbacktracked[nextPos].append(currentPos) #de '01' dá para voltar para '00'
                 print('unbacktracked ', self.unbacktracked)
         # else:
 
-
-        # while not self.isPossibleToMove(result[1]):
-        #     result = self.getNextPosition()
 
         return result
 
