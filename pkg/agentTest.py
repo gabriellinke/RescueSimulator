@@ -115,18 +115,20 @@ class AgentTest:
         if self.prob.goalTest(self.currentState):
             print("!!! Objetivo atingido !!!")
             del self.libPlan[0]  ## retira plano da biblioteca
+        
+        if self.plan.name == "lrta" and self.currentState == self.plan.goalPos:
+            print("!!! Objetivo atingido - cheguei na base !!!")
+            del self.libPlan[0] 
+            return 1
 
         if(self.costAll >= self.tl ):
             if self.plan.name == "dfs":
                 map = self.plan.getMazeMap()
-                print("\n\n\nTroca o plano!\n\n\n")
                 lrta = LRTAStarPlan(self.model.rows, self.model.columns, self.prob.initialState, self.currentState, map, "lrta", self.mesh)
                 self.libPlan.append(lrta)
                 del self.libPlan[0]  ## retira plano da dfs da biblioteca
                 self.plan = self.libPlan[0]
-                self.plan.getNextPosition()
-            else: 
-                print("\nNome não é DFS\n\n")
+                return 1
 
         if(self.tl <= 0):
             print("O tempo acabou!")

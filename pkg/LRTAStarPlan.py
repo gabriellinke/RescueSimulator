@@ -8,6 +8,7 @@ class LRTAStarPlan:
         """
         Define as variaveis necessárias para a utilização do LRTA* por um agente
         """
+        self.name = name
         self.goalPos = goal
 
         self.maxRows = maxRows
@@ -56,11 +57,12 @@ class LRTAStarPlan:
          @return: tupla contendo a acao (direcao) e o estado futuro resultante da movimentacao """
 
         position = (self.currentState.row, self.currentState.col)
+
         mapCopy = copy.deepcopy(self.map)
 
         for i in range(position[0] - 1, position[0] + 2):
             for j in range(position[1] - 1, position[1] + 2):
-                if position[0] > 0 and position[1] > 0 and position[0] < self.maxRows and position[1] < self.maxColumns:
+                if i >= 0 and j >= 0 and i < self.maxRows and j < self.maxColumns:
                     if i == position[0] or j == position[1]:
                         if i != position[0] or j != position[1]: #Para não aumentar o valor da posição atual
                             mapCopy[i][j] += 1
@@ -70,15 +72,29 @@ class LRTAStarPlan:
         betterPair = (position[0] - 1, position[1] - 1)
         for i in range(position[0] - 1, position[0] + 2):
             for j in range(position[1] - 1, position[1] + 2):
+                if i >= 0 and j >= 0 and i < self.maxRows and j < self.maxColumns:
                     if (i != position[0] or j != position[1]) and mapCopy[i][j] < mapCopy[betterPair[0]][betterPair[1]]:
                         betterPair = (i, j)
-            
-        for line in mapCopy:
-            print(line)
 
-        print('\n\nBetter Pair: ', betterPair, ' Value: ', mapCopy[betterPair[0]][betterPair[1]])
+        # print('\nPosição: ', position, mapCopy[position[0]][position[1]] , '\nMelhor: ', betterPair, mapCopy[betterPair[0]][betterPair[1]], '\n')
+
         self.map[betterPair[0]][betterPair[1]] = mapCopy[betterPair[0]][betterPair[1]]
 
+        movePos = {"N": (-1, 0),
+                   "S": (1, 0),
+                   "L": (0, 1),
+                   "O": (0, -1),
+                   "NE": (-1, 1),
+                   "NO": (-1, -1),
+                   "SE": (1, 1),
+                   "SO": (1, -1)}
+
+        # for line in mapCopy:
+        #     print(line)
+
+        delta = (betterPair[0] - position[0], betterPair[1] - position[1])
+        action = list(movePos.keys())[list(movePos.values()).index(delta)]
+        return action, State(betterPair[0], betterPair[1])
 
     def chooseAction(self):
         """ Escolhe o proximo movimento de forma aleatoria. 
@@ -87,17 +103,9 @@ class LRTAStarPlan:
         """
 
         ## Tenta encontrar um movimento possivel dentro do tabuleiro 
-        # result = self.getNextPosition()
-        # currentPos = (self.currentState.row, self.currentState.col)
-        # nextPos = (result[1].row, result[1].col)
+        result = self.getNextPosition()
 
-        # if self.isPossibleToMove(result[1]) and result[0] != 'nop': 
-        #     if (currentPos, result[0]) not in self.result.keys():
-        #         self.result[(currentPos, result[0])] = nextPos
-        #         self.unbacktracked[nextPos].append(currentPos)
-
-
-        # return result
+        return result
 
     def do(self):
         """
@@ -106,5 +114,5 @@ class LRTAStarPlan:
         Retorna o movimento e o estado do plano (False = nao concluido, True = Concluido)
         """
 
-        # nextMove = self.move()
-        # return (nextMove[1], self.goalPos == State(nextMove[0][0], nextMove[0][1]))
+        nextMove = self.move()
+        return (nextMove[1], self.goalPos == State(nextMove[0][0], nextMove[0][1]))
