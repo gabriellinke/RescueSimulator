@@ -89,6 +89,13 @@ class AgentRescue:
         self.previousAction = "nop"    ## nenhuma (no operation)
         self.expectedState = self.currentState
 
+        victims = self.plan.takePackages()
+        print("\n*** Pegando ", victims, " pacotes ***")
+        self.costAll += victims * 0.5
+        print ("Custo até o momento (com a ação escolhida):", self.costAll) 
+        self.ts -= victims * 0.5
+        print("Tempo disponivel: ", self.ts)
+
     ## Metodo que define a deliberacao do agente 
     def deliberate(self):
         ## Verifica se há algum plano a ser executado
@@ -120,13 +127,14 @@ class AgentRescue:
         ## Verifica se tem vitima na posicao atual    
         victimId = self.victimPresenceSensor()
         if (victimId > 0) and (self.prob.mazeBelief.victims[self.currentState.row][self.currentState.col] == 0):
-            print ("vitima encontrada em ", self.currentState, " id: ", victimId, " sinais vitais: ", self.victimVitalSignalsSensor(victimId))
-            print ("vitima encontrada em ", self.currentState, " id: ", victimId, " dif de acesso: ", self.victimDiffOfAcessSensor(victimId))
+            print ("vitima socorrida em ", self.currentState, " id: ", victimId, " sinais vitais: ", self.victimVitalSignalsSensor(victimId))
+            print ("vitima socorrida em ", self.currentState, " id: ", victimId, " dif de acesso: ", self.victimDiffOfAcessSensor(victimId))
             self.prob.mazeBelief.victims[self.currentState.row][self.currentState.col] = victimId
             self.prob.mazeBelief.vitalSignals.append(self.victimVitalSignalsSensor(victimId))
             self.prob.mazeBelief.diffAccess.append(self.victimDiffOfAcessSensor(victimId))
-            ## consome o tempo gasto para ler sinais vitais e calcular dificuldade de resgate
-            self.ts -= 2
+            ## consome o tempo gasto para deixar o pacote de resgate
+            self.ts -= 0.5
+            self.costAll += 0.5
             print("Tempo disponivel: ", self.ts)
 
         ## Verifica se atingiu o estado objetivo

@@ -25,6 +25,7 @@ class AStarPlan:
                     self.victimsCoordinates.append((i,j))
 
         self.totalCost = 0
+        self.totaVictims = 0
         self.savePath = []
         self.returnPath = []
 
@@ -37,9 +38,11 @@ class AStarPlan:
             self.goalPos = self.endCoordinate
             self.setStart(self.startCoordinate)
             tempSavePath = self.calculatePath()
+            # Tira nós redundantes
+            tempSavePath.pop(0)
             cost = self.calculatePathCost(tempSavePath)
             self.totalCost += cost
-            print('Path: ', tempSavePath, ' Cost: ', cost, ' Total cost: ', self.totalCost)
+            # print('Path: ', tempSavePath, ' Cost: ', cost, ' Total cost: ', self.totalCost)
 
             self.totalCost += 0.5 #0.5 pra deixar o pacote com a vítima
 
@@ -48,13 +51,13 @@ class AStarPlan:
             tempReturnPath = self.calculatePath()
             cost = self.calculatePathCost(tempReturnPath)
             self.totalCost += cost
-            print('Path: ', tempReturnPath, ' Cost: ', cost, ' Total cost: ', self.totalCost)
+            # print('Path: ', tempReturnPath, ' Cost: ', cost, ' Total cost: ', self.totalCost)
 
             # Total cost < ts? Calcula para nova vítima
             if self.totalCost < ts:
                 self.savePath.extend(tempSavePath.copy())
                 self.returnPath = tempReturnPath.copy()
-                print('Save Path: ', self.savePath, ' Return Path: ', self.returnPath, '\n')
+                # print('Save Path: ', self.savePath, ' Return Path: ', self.returnPath, '\n')
 
                 # Pega nova vítima
                 self.startCoordinate = self.endCoordinate
@@ -63,10 +66,15 @@ class AStarPlan:
                 if not (self.endCoordinate):
                     break
 
+        # Tira nós redundantes
+        self.returnPath.pop(0)
+
+
     def getVictim(self):
         if(len(self.victimsCoordinates) >= 1):
             rand = randint(0, len(self.victimsCoordinates)-1)
             victim = self.victimsCoordinates.pop(rand)
+            self.totaVictims += 1
             return State(victim[0], victim[1])
 
     # Inicializa as variáveis para poder rodar o algoritmo
@@ -182,29 +190,14 @@ class AStarPlan:
         """ Sorteia uma direcao e calcula a posicao futura do agente
          @return: tupla contendo a acao (direcao) e o estado futuro resultante da movimentacao """
 
+        if(len(self.savePath) > 0):
+            move = self.savePath.pop(0)
+        elif (len(self.returnPath) > 0):
+            move = self.returnPath.pop(0)
+        else:
+            return "nop", self.currentState
+
         position = (self.currentState.row, self.currentState.col)
-
-        mapCopy = copy.deepcopy(self.map)
-
-        for i in range(position[0] - 1, position[0] + 2):
-            for j in range(position[1] - 1, position[1] + 2):
-                if i >= 0 and j >= 0 and i < self.maxRows and j < self.maxColumns:
-                    if i == position[0] or j == position[1]:
-                        if i != position[0] or j != position[1]: #Para não aumentar o valor da posição atual
-                            mapCopy[i][j] += 1
-                    else:
-                        mapCopy[i][j] += 1.5
-
-        betterPair = (position[0] - 1, position[1] - 1)
-        for i in range(position[0] - 1, position[0] + 2):
-            for j in range(position[1] - 1, position[1] + 2):
-                if i >= 0 and j >= 0 and i < self.maxRows and j < self.maxColumns:
-                    if (i != position[0] or j != position[1]) and mapCopy[i][j] < mapCopy[betterPair[0]][betterPair[1]]:
-                        betterPair = (i, j)
-
-        # print('\nPosição: ', position, mapCopy[position[0]][position[1]] , '\nMelhor: ', betterPair, mapCopy[betterPair[0]][betterPair[1]], '\n')
-
-        self.map[betterPair[0]][betterPair[1]] = mapCopy[betterPair[0]][betterPair[1]]
 
         movePos = {"N": (-1, 0),
                    "S": (1, 0),
@@ -215,12 +208,12 @@ class AStarPlan:
                    "SE": (1, 1),
                    "SO": (1, -1)}
 
-        # for line in mapCopy:
-        #     print(line)
-
-        delta = (betterPair[0] - position[0], betterPair[1] - position[1])
+        delta = (move[0] - position[0], move[1] - position[1])
         action = list(movePos.keys())[list(movePos.values()).index(delta)]
-        return action, State(betterPair[0], betterPair[1])
+        return action, State(move[0], move[1])
+
+    def takePackages(self):
+        return self.totaVictims
 
     def chooseAction(self):
         """ Escolhe o proximo movimento de forma aleatoria. 
