@@ -150,6 +150,6 @@ class OnlineDFSPlan:
         for value in values:  
             map[value[0]][value[1]] = abs(value[0] - self.initialState.row) + abs(value[1] - self.initialState.col)
 
-        for line in map:
-            print(line)
+        # for line in map:
+        #     print(line)
         return map

@@ -4,7 +4,7 @@ from pygame.locals import *
 
 
 class View:
-    """Desenha o ambiente (o que está representado no Model) em formato texto."""
+    """Desenha o ambiente (o que estï¿½ representado no Model) em formato texto."""
     def __init__(self, model):
         self.model = model
         ##Define a posicao do agente
@@ -16,7 +16,7 @@ class View:
         ## Tamanho dos quadrados
         self.square_size = 50
 
-        ##Inicia os módulos do PYGAME
+        ##Inicia os mï¿½dulos do PYGAME
         pygame.init() 
 
         ## Define a largura e a altura da tela
@@ -48,8 +48,8 @@ class View:
 
         """
         O funcionamento consiste em duas partes:
-            1° -> Construcao do ambiente. O usuario clica no bloco define o que vai ter nele;
-            2° -> Depois que o usuário apertar a tecla ENTER, comeca a execucao do programa.
+            1ï¿½ -> Construcao do ambiente. O usuario clica no bloco define o que vai ter nele;
+            2ï¿½ -> Depois que o usuï¿½rio apertar a tecla ENTER, comeca a execucao do programa.
         """
         #self.step = "build"
         self.step ="notbuild"
@@ -114,7 +114,7 @@ class View:
 
         ## Desenha a fala do robo na lateral
         #txt = "Estou em (x, y): " + str(self.model.agentPos[1]) + ", " + str(self.model.agentPos[0]) +  " Cambio..."
-        #fonte=pygame.font.SysFont("Times New Roman", 20, False, False)           ##### usa a fonte padrão
+        #fonte=pygame.font.SysFont("Times New Roman", 20, False, False)           ##### usa a fonte padrï¿½o
         #txttela = fonte.render(txt, 0, (0,0,0))  ##### renderiza o texto na cor desejada
         #self.tela.blit(txttela,(self.largura+6, 170))
 
@@ -127,7 +127,7 @@ class View:
             # self.tela.blit(self.log, (self.largura, 5))
            
             #txt = "UFA.... Finalmente cheguei!"
-            #fonte=pygame.font.SysFont("Times New Roman", 20, False, False)           ##### usa a fonte padrão
+            #fonte=pygame.font.SysFont("Times New Roman", 20, False, False)           ##### usa a fonte padrï¿½o
             #txttela = fonte.render(txt, 0, (0,0,0))  ##### renderiza o texto na cor desejada
             #self.tela.blit(txttela,(self.largura+6, 170))
 

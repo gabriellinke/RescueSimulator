@@ -21,7 +21,7 @@ from LRTAStarPlan import LRTAStarPlan
 sys.path.append(os.path.join("pkg", "planner"))
 from planner import Planner
 ## Classe que define o Agente
-class AgentTest:
+class AgentSweeper:
     def __init__(self, model, configDict):
         """ 
         Construtor do agente random
@@ -54,8 +54,8 @@ class AgentTest:
         # self.prob.defGoalState(randint(0,model.rows-1), randint(0,model.columns-1))
         
         # definimos um estado objetivo que veio do arquivo ambiente.txt
-        self.prob.defGoalState(model.maze.board.posGoal[0],model.maze.board.posGoal[1])
-        print("*** Objetivo do agente: ", self.prob.goalState)
+        # self.prob.defGoalState(model.maze.board.posGoal[0],model.maze.board.posGoal[1])
+        # print("*** Objetivo do agente: ", self.prob.goalState)
         print("*** Total de vitimas existentes no ambiente: ", self.model.getNumberOfVictims())
 
 
@@ -66,7 +66,7 @@ class AgentTest:
         ## Custo da solução
         self.costAll = 0
 
-        ## Cria a instancia do plano para se movimentar aleatoriamente no labirinto (sem nenhuma acao) 
+        ## Cria a instancia do plano da online-DFS
         self.plan = OnlineDFSPlan(model.rows, model.columns, self.prob.goalState, initial, "dfs", self.mesh)
 
         ## adicionar crencas sobre o estado do ambiente ao plano - neste exemplo, o agente faz uma copia do que existe no ambiente.
@@ -110,43 +110,49 @@ class AgentTest:
         self.tl -= self.prob.getActionCost(self.previousAction)
         print("Tempo disponivel: ", self.tl)
 
+        ## Verifica se tem vitima na posicao atual    
+        victimId = self.victimPresenceSensor()
+        if (victimId > 0) and (self.prob.mazeBelief.victims[self.currentState.row][self.currentState.col] == 0):
+            print ("vitima encontrada em ", self.currentState, " id: ", victimId, " sinais vitais: ", self.victimVitalSignalsSensor(victimId))
+            print ("vitima encontrada em ", self.currentState, " id: ", victimId, " dif de acesso: ", self.victimDiffOfAcessSensor(victimId))
+            self.prob.mazeBelief.victims[self.currentState.row][self.currentState.col] = victimId
+            self.prob.mazeBelief.vitalSignals.append(self.victimVitalSignalsSensor(victimId))
+            self.prob.mazeBelief.diffAccess.append(self.victimDiffOfAcessSensor(victimId))
+            ## consome o tempo gasto para ler sinais vitais e calcular dificuldade de resgate
+            self.tl -= 2
+            print("Tempo disponivel: ", self.tl)
+
         ## Verifica se atingiu o estado objetivo
         ## Poderia ser outra condição, como atingiu o custo máximo de operação
-        if self.prob.goalTest(self.currentState):
-            print("!!! Objetivo atingido !!!")
-            del self.libPlan[0]  ## retira plano da biblioteca
+        # if self.prob.goalTest(self.currentState):
+        #     print("!!! Objetivo atingido !!!")
+        #     del self.libPlan[0]  ## retira plano da biblioteca
         
+        ## Se o plano executado for o LRTA*, verifica se já alcançou o objetivo de chegar na base
         if self.plan.name == "lrta" and self.currentState == self.plan.goalPos:
             print("!!! Objetivo atingido - cheguei na base !!!")
             del self.libPlan[0] 
+            # to-do: Se ainda tem tempo, volta a fazer DFS
             return 1
 
-        if(self.costAll >= self.tl ):
-            if self.plan.name == "dfs":
-                map = self.plan.getMazeMap()
-                lrta = LRTAStarPlan(self.model.rows, self.model.columns, self.prob.initialState, self.currentState, map, "lrta", self.mesh)
-                self.libPlan.append(lrta)
-                del self.libPlan[0]  ## retira plano da dfs da biblioteca
-                self.plan = self.libPlan[0]
-                return 1
+        ## Se o plano executado for o online-DFS, verifica se já se passou certa quantia de tempo estipulada. 
+        #  Se sim, termina a DFS e inicia um LRTA* pra voltar para a base.
+        if self.plan.name == "dfs" and self.costAll >= self.tl:
+            map = self.plan.getMazeMap()
+            lrta = LRTAStarPlan(self.model.rows, self.model.columns, self.prob.initialState, self.currentState, map, "lrta", self.mesh)
+            self.libPlan.append(lrta)
+            del self.libPlan[0]  ## retira plano da dfs da biblioteca
+            self.plan = self.libPlan[0]
+            return 1
 
         if(self.tl <= 0):
             print("O tempo acabou!")
             del self.libPlan[0]  ## retira plano da biblioteca
-            print(self.prob.mazeBelief.walls)
-            print(self.prob.mazeBelief.victims)
-            print(self.prob.mazeBelief.vitalSignals)
-            print(self.prob.mazeBelief.diffAccess)
-        
-        ## Verifica se tem vitima na posicao atual    
-        victimId = self.victimPresenceSensor()
-        if victimId > 0:
-            print ("vitima encontrada em ", self.currentState, " id: ", victimId, " sinais vitais: ", self.victimVitalSignalsSensor(victimId))
-            print ("vitima encontrada em ", self.currentState, " id: ", victimId, " dif de acesso: ", self.victimDiffOfAcessSensor(victimId))
-            if(self.prob.mazeBelief.victims[self.currentState.row][self.currentState.col] == 0):
-                self.prob.mazeBelief.victims[self.currentState.row][self.currentState.col] = victimId
-                self.prob.mazeBelief.vitalSignals.append(self.victimVitalSignalsSensor(victimId))
-                self.prob.mazeBelief.diffAccess.append(self.victimDiffOfAcessSensor(victimId))
+            return 1
+            # print(self.prob.mazeBelief.walls)
+            # print(self.prob.mazeBelief.victims)
+            # print(self.prob.mazeBelief.vitalSignals)
+            # print(self.prob.mazeBelief.diffAccess)            
 
         ## Define a proxima acao a ser executada
         ## currentAction eh uma tupla na forma: <direcao>, <state>
@@ -194,6 +200,7 @@ class AgentTest:
             position = State(self.currentState.row + movePos[action][0], self.currentState.col + movePos[action][1])
 
             # Adiciona parede no mapa do robô - Se o erro foi tentando ir pra diagonal não adiciono parede
+            # OBS: Acho que essa parte não ta sendo usada pra nada
             if action != 'NO' and action != 'NE' and action != 'SO' and action != 'SE':
                 if position.row > 0 and position.col > 0 and position.row < self.prob.mazeBelief.maxRows and position.col < self.prob.mazeBelief.maxColumns:
                     self.prob.mazeBelief.walls[position.row][position.col] = 1

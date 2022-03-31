@@ -1,6 +1,6 @@
 maxLin=25
 maxCol=25
-Tl=1030	
+Tl=12000
 Ts=30
 Bv=1500
 Bs=60
