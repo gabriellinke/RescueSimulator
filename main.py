@@ -7,6 +7,7 @@ sys.path.append(os.path.join("pkg"))
 from model import Model
 from agentRnd import AgentRnd
 from agentSweeper import AgentSweeper
+from agentRescue import AgentRescue
 
 ## Metodo utilizado para permitir que o usuario construa o labirindo clicando em cima
 def buildMaze(model):
@@ -58,13 +59,14 @@ def main():
     agentSweeper.deliberate()
     while agentSweeper.deliberate() != -1:
         model.draw()
-        time.sleep(0.1) # para dar tempo de visualizar as movimentacoes do agente no labirinto
+        time.sleep(0.00001) # para dar tempo de visualizar as movimentacoes do agente no labirinto
 
-    agent = AgentRnd(model,configDict)
+    agentSweeperMaze = agentSweeper.prob.mazeBelief
+    agentRescue = AgentRescue(model,configDict, agentSweeperMaze.victims, agentSweeper.mazeMap, agentSweeperMaze.vitalSignals, agentSweeperMaze.diffAccess)
     
-    while agent.deliberate() != -1:
+    while agentRescue.deliberate() != -1:
         model.draw()
-        time.sleep(0.0001) # para dar tempo de visualizar as movimentacoes do agente no labirinto
+        time.sleep(0.5) # para dar tempo de visualizar as movimentacoes do agente no labirinto
     model.draw()    
         
 if __name__ == '__main__':

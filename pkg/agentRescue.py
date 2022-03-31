@@ -14,25 +14,25 @@ from maze import Maze
 
 ## Importa o algoritmo para o plano
 from testPlan import TestPlan
-from onlineDFSPlan import OnlineDFSPlan
-from LRTAStarPlan import LRTAStarPlan
+from AStarPlan import AStarPlan
 
 ##Importa o Planner
 sys.path.append(os.path.join("pkg", "planner"))
 from planner import Planner
+
 ## Classe que define o Agente
-class AgentSweeper:
-    def __init__(self, model, configDict):
+class AgentRescue:
+    def __init__(self, model, configDict, victimsMap, terrainMap, vitalSignals, diffAccess):
         """ 
         Construtor do agente random
         @param model referencia o ambiente onde o agente estah situado
         """
-       
+
         self.model = model
 
         ## Obtem o tempo que tem para executar
-        self.tl = configDict["Tl"]
-        print("Tempo disponivel: ", self.tl)
+        self.ts = configDict["Ts"]
+        print("Tempo disponivel: ", self.ts)
         
         ## Pega o tipo de mesh, que está no model (influência na movimentação)
         self.mesh = self.model.mesh
@@ -49,13 +49,19 @@ class AgentSweeper:
         # Define o estado atual do agente = estado inicial
         self.currentState = self.prob.initialState
 
+        # Salva as informações que foram passados pelo agente vasculhador
+        self.victimsMap = victimsMap
+        self.terrainMap = terrainMap
+        self.vitalSignals = vitalSignals
+        self.diffAccess = diffAccess
+
         # Define o estado objetivo:        
         # definimos um estado objetivo aleatorio
         # self.prob.defGoalState(randint(0,model.rows-1), randint(0,model.columns-1))
         
         # definimos um estado objetivo que veio do arquivo ambiente.txt
-        # self.prob.defGoalState(model.maze.board.posGoal[0],model.maze.board.posGoal[1])
-        # print("*** Objetivo do agente: ", self.prob.goalState)
+        self.prob.defGoalState(model.maze.board.posGoal[0],model.maze.board.posGoal[1])
+        print("*** Objetivo do agente: ", self.prob.goalState)
         print("*** Total de vitimas existentes no ambiente: ", self.model.getNumberOfVictims())
 
 
@@ -67,13 +73,14 @@ class AgentSweeper:
         self.costAll = 0
 
         ## Cria a instancia do plano da online-DFS
-        self.plan = OnlineDFSPlan(model.rows, model.columns, self.prob.goalState, initial, "dfs", self.mesh)
+        self.plan = AStarPlan(model.rows, model.columns, initial, self.victimsMap, self.terrainMap, self.ts, "a*", self.mesh)
+        # self.plan = OnlineDFSPlan(model.rows, model.columns, self.prob.goalState, initial, "dfs", self.mesh)
 
         ## adicionar crencas sobre o estado do ambiente ao plano - neste exemplo, o agente faz uma copia do que existe no ambiente.
         ## Em situacoes de exploracao, o agente deve aprender em tempo de execucao onde estao as paredes
 
         # Quando tento executar uma ação e ela dá erro, adiciono a posição que deu erro no mapa de paredes
-        self.plan.setWalls(self.model.maze.walls)
+        # self.plan.setWalls(self.model.maze.walls)
 
         ## Adiciona o(s) planos a biblioteca de planos do agente
         self.libPlan=[self.plan]
@@ -107,8 +114,8 @@ class AgentSweeper:
         print ("Custo até o momento (com a ação escolhida):", self.costAll) 
 
         ## consome o tempo gasto
-        self.tl -= self.prob.getActionCost(self.previousAction)
-        print("Tempo disponivel: ", self.tl)
+        self.ts -= self.prob.getActionCost(self.previousAction)
+        print("Tempo disponivel: ", self.ts)
 
         ## Verifica se tem vitima na posicao atual    
         victimId = self.victimPresenceSensor()
@@ -119,8 +126,8 @@ class AgentSweeper:
             self.prob.mazeBelief.vitalSignals.append(self.victimVitalSignalsSensor(victimId))
             self.prob.mazeBelief.diffAccess.append(self.victimDiffOfAcessSensor(victimId))
             ## consome o tempo gasto para ler sinais vitais e calcular dificuldade de resgate
-            self.tl -= 2
-            print("Tempo disponivel: ", self.tl)
+            self.ts -= 2
+            print("Tempo disponivel: ", self.ts)
 
         ## Verifica se atingiu o estado objetivo
         ## Poderia ser outra condição, como atingiu o custo máximo de operação
@@ -137,15 +144,15 @@ class AgentSweeper:
 
         ## Se o plano executado for o online-DFS, verifica se já se passou certa quantia de tempo estipulada. 
         #  Se sim, termina a DFS e inicia um LRTA* pra voltar para a base.
-        if self.plan.name == "dfs" and self.costAll >= self.tl:
-            self.mazeMap = self.plan.getMazeMap()
-            lrta = LRTAStarPlan(self.model.rows, self.model.columns, self.prob.initialState, self.currentState, self.mazeMap, "lrta", self.mesh)
+        if self.plan.name == "dfs" and self.costAll >= self.ts:
+            map = self.plan.getMazeMap()
+            lrta = LRTAStarPlan(self.model.rows, self.model.columns, self.prob.initialState, self.currentState, map, "lrta", self.mesh)
             self.libPlan.append(lrta)
             del self.libPlan[0]  ## retira plano da dfs da biblioteca
             self.plan = self.libPlan[0]
             return 1
 
-        if(self.tl <= 0):
+        if(self.ts <= 0):
             print("O tempo acabou!")
             del self.libPlan[0]  ## retira plano da biblioteca
             return 1
