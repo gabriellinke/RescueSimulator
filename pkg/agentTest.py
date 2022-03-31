@@ -15,6 +15,7 @@ from maze import Maze
 ## Importa o algoritmo para o plano
 from testPlan import TestPlan
 from onlineDFSPlan import OnlineDFSPlan
+from LRTAStarPlan import LRTAStarPlan
 
 ##Importa o Planner
 sys.path.append(os.path.join("pkg", "planner"))
@@ -66,7 +67,7 @@ class AgentTest:
         self.costAll = 0
 
         ## Cria a instancia do plano para se movimentar aleatoriamente no labirinto (sem nenhuma acao) 
-        self.plan = OnlineDFSPlan(model.rows, model.columns, self.prob.goalState, initial, "goal", self.mesh)
+        self.plan = OnlineDFSPlan(model.rows, model.columns, self.prob.goalState, initial, "dfs", self.mesh)
 
         ## adicionar crencas sobre o estado do ambiente ao plano - neste exemplo, o agente faz uma copia do que existe no ambiente.
         ## Em situacoes de exploracao, o agente deve aprender em tempo de execucao onde estao as paredes
@@ -109,6 +110,24 @@ class AgentTest:
         self.tl -= self.prob.getActionCost(self.previousAction)
         print("Tempo disponivel: ", self.tl)
 
+        ## Verifica se atingiu o estado objetivo
+        ## Poderia ser outra condição, como atingiu o custo máximo de operação
+        if self.prob.goalTest(self.currentState):
+            print("!!! Objetivo atingido !!!")
+            del self.libPlan[0]  ## retira plano da biblioteca
+
+        if(self.costAll >= self.tl ):
+            if self.plan.name == "dfs":
+                map = self.plan.getMazeMap()
+                print("\n\n\nTroca o plano!\n\n\n")
+                lrta = LRTAStarPlan(self.model.rows, self.model.columns, self.prob.initialState, self.currentState, map, "lrta", self.mesh)
+                self.libPlan.append(lrta)
+                del self.libPlan[0]  ## retira plano da dfs da biblioteca
+                self.plan = self.libPlan[0]
+                self.plan.getNextPosition()
+            else: 
+                print("\nNome não é DFS\n\n")
+
         if(self.tl <= 0):
             print("O tempo acabou!")
             del self.libPlan[0]  ## retira plano da biblioteca
@@ -116,13 +135,6 @@ class AgentTest:
             print(self.prob.mazeBelief.victims)
             print(self.prob.mazeBelief.vitalSignals)
             print(self.prob.mazeBelief.diffAccess)
-            map = self.plan.getMazeMap()
-
-        ## Verifica se atingiu o estado objetivo
-        ## Poderia ser outra condição, como atingiu o custo máximo de operação
-        if self.prob.goalTest(self.currentState):
-            print("!!! Objetivo atingido !!!")
-            del self.libPlan[0]  ## retira plano da biblioteca
         
         ## Verifica se tem vitima na posicao atual    
         victimId = self.victimPresenceSensor()

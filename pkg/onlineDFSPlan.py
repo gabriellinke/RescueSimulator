@@ -7,6 +7,7 @@ class OnlineDFSPlan:
         """
         Define as variaveis necessárias para a utilização do Online DFS por um agente
         """
+        self.name = name
         self.walls = []
         self.maxRows = maxRows
         self.maxColumns = maxColumns
