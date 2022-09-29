@@ -29,7 +29,7 @@ class AgentRnd:
         self.model = model
 
         ## Obtem o tempo que tem para executar
-        self.tl = configDict["Tl"]
+        self.tl = configDict["Te"]
         print("Tempo disponivel: ", self.tl)
         
         ## Pega o tipo de mesh, que está no model (influência na movimentação)
@@ -118,7 +118,6 @@ class AgentRnd:
         victimId = self.victimPresenceSensor()
         if victimId > 0:
             print ("vitima encontrada em ", self.currentState, " id: ", victimId, " sinais vitais: ", self.victimVitalSignalsSensor(victimId))
-            print ("vitima encontrada em ", self.currentState, " id: ", victimId, " dif de acesso: ", self.victimDiffOfAcessSensor(victimId))
 
         ## Define a proxima acao a ser executada
         ## currentAction eh uma tupla na forma: <direcao>, <state>
@@ -164,12 +163,6 @@ class AgentRnd:
         @param o id da vítima
         @return a lista de sinais vitais (ou uma lista vazia se não tem vítima com o id)"""     
         return self.model.getVictimVitalSignals(victimId)
-
-    def victimDiffOfAcessSensor(self, victimId):
-        """Simula um sensor que realiza a leitura dos dados relativos à dificuldade de acesso a vítima
-        @param o id da vítima
-        @return a lista dos dados de dificuldade (ou uma lista vazia se não tem vítima com o id)"""     
-        return self.model.getDifficultyOfAcess(victimId)
     
     ## Metodo que atualiza a biblioteca de planos, de acordo com o estado atual do agente
     def updateLibPlan(self):

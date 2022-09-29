@@ -18,21 +18,31 @@ def buildMaze(model):
     ## Atualiza o labirinto
     model.updateMaze()
 
-def main():
-    # Lê arquivo config.txt
-    arq = open(os.path.join("config_data","config.txt"),"r")
-    configDict = {} 
+
+# Faz a leitura dos parâmetros do ambiente
+def loadConfig():
+    arq = open(os.path.join("config_data","ambiente.txt"),"r")
+    configDict = {}
     for line in arq:
-        ## O formato de cada linha é:var=valor
-        ## As variáveis são 
-        ##  maxLin, maxCol que definem o tamanho do labirinto
-        ## Tv e Ts: tempo limite para vasculhar e tempo para salvar
-        ## Bv e Bs: bateria inicial disponível ao agente vasculhador e ao socorrista
-        ## Ks :capacidade de carregar suprimentos em número de pacotes (somente para o ag. socorrista)
+            var, *values = line.replace('\n', '').split(' ')
+            if(var == 'Te' or var == 'Ts' or var == 'XMax' or var == 'YMax'):
+                configDict[var] = int(values[0])
+            elif(var == 'Base'):
+                x, y = values[0].split(',')
+                configDict[var] = [int(x),int(y)]
+            elif(var == 'Vitimas' or var == 'Parede'):
+                coords = []
+                for coord in values:
+                    x, y = coord.split(',')
+                    coords.append([int(x), int(y)])
+                configDict[var] = coords
+    
+    return configDict
 
-        values = line.split("=")
-        configDict[values[0]] = int(values[1])
 
+def main():
+    # Faz a leitura dos parâmetros do ambiente
+    configDict = loadConfig()
     print("dicionario config: ", configDict)
 
     # Cria o ambiente (modelo) = Labirinto com suas paredes
@@ -41,7 +51,7 @@ def main():
     ## nome do arquivo de configuracao do ambiente - deve estar na pasta <proj>/config_data
     loadMaze = "ambiente"
 
-    model = Model(configDict["maxLin"], configDict["maxCol"], mesh, loadMaze)
+    model = Model(configDict["XMax"], configDict["YMax"], mesh, loadMaze)
     buildMaze(model)
 
     model.maze.board.posAgent
