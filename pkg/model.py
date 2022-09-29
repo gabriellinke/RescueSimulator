@@ -75,9 +75,9 @@ class Model:
         row_dif = to_row - from_row
         col_dif = to_col - from_col
 
-        ## vai na diagonal? Caso sim, nao pode ter paredes acima & dir. ou acima & esq. ou abaixo & dir. ou abaixo & esq.
+        ## vai na diagonal? Caso sim, nao pode ter paredes acima | dir. ou acima | esq. ou abaixo | dir. ou abaixo | esq.
         if (row_dif !=0 and col_dif != 0):
-            if (self.maze.walls[from_row + row_dif][from_col] == 1 and
+            if (self.maze.walls[from_row + row_dif][from_col] == 1 or
                 self.maze.walls[from_row][from_col + col_dif] == 1):
                 return -1
         

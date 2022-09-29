@@ -66,8 +66,6 @@ def main():
     # Cria um agente
     agent = AgentRnd(model,configDict)
 
-    ## Ciclo de raciocínio do agente
-    agent.deliberate()
     while agent.deliberate() != -1:
         model.draw()
         time.sleep(0.3) # para dar tempo de visualizar as movimentacoes do agente no labirinto

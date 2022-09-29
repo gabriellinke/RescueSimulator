@@ -25,16 +25,15 @@ class AgentRnd:
         Construtor do agente random
         @param model referencia o ambiente onde o agente estah situado
         """
-       
+
         self.model = model
 
         ## Obtem o tempo que tem para executar
-        self.tl = configDict["Te"]
-        print("Tempo disponivel: ", self.tl)
+        self.time = configDict["Te"]
+        print("Tempo disponivel: ", self.time)
         
         ## Pega o tipo de mesh, que está no model (influência na movimentação)
         self.mesh = self.model.mesh
-
 
         ## Cria a instância do problema na mente do agente (sao suas crencas)
         self.prob = Problem()
@@ -44,17 +43,10 @@ class AgentRnd:
         # O agente le sua posica no ambiente por meio do sensor
         initial = self.positionSensor()
         self.prob.defInitialState(initial.row, initial.col)
-        print("*** Estado inicial do agente: ", self.prob.initialState)
-        
         # Define o estado atual do agente = estado inicial
         self.currentState = self.prob.initialState
-
-        # Define o estado objetivo:        
-        # definimos um estado objetivo aleatorio
-        # self.prob.defGoalState(randint(0,model.rows-1), randint(0,model.columns-1))
-        
+        print("*** Estado inicial do agente: ", self.prob.initialState)
         print("*** Total de vitimas existentes no ambiente: ", self.model.getNumberOfVictims())
-
 
         """
         DEFINE OS PLANOS DE EXECUÇÃO DO AGENTE
@@ -66,10 +58,6 @@ class AgentRnd:
         ## Cria a instancia do plano para se movimentar aleatoriamente no labirinto (sem nenhuma acao) 
         self.plan = RandomPlan(model.rows, model.columns, self.prob.goalState, initial, "goal", self.mesh)
 
-        ## adicionar crencas sobre o estado do ambiente ao plano - neste exemplo, o agente faz uma copia do que existe no ambiente.
-        ## Em situacoes de exploracao, o agente deve aprender em tempo de execucao onde estao as paredes
-        self.plan.setWalls(model.maze.walls)
-        
         ## Adiciona o(s) planos a biblioteca de planos do agente
         self.libPlan=[self.plan]
 
@@ -83,6 +71,10 @@ class AgentRnd:
         if len(self.libPlan) == 0:
             return -1   ## fim da execucao do agente, acabaram os planos
         
+        ## Verifica se ainda tem tempo para executar
+        if self.time <= 0:
+            return -1
+
         self.plan = self.libPlan[0]
 
         print("\n*** Inicio do ciclo raciocinio ***")
@@ -102,8 +94,8 @@ class AgentRnd:
         print ("Custo até o momento (com a ação escolhida):", self.costAll) 
 
         ## consome o tempo gasto
-        self.tl -= self.prob.getActionCost(self.previousAction)
-        print("Tempo disponivel: ", self.tl)
+        self.time -= self.prob.getActionCost(self.previousAction)
+        print("Tempo disponivel: ", self.time)
         
         ## Verifica se tem vitima na posicao atual    
         victimId = self.victimPresenceSensor()
