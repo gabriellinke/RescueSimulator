@@ -98,6 +98,8 @@ class Square:
         elif self.itemInside == "Lâmpada":
             self.color = (0,0,0)
             self.actionable = True
+        elif self.itemInside == "Base":
+            self.color = (253,253,150)
         elif self.itemInside == "Agente":
             self.agent = True
         elif self.itemInside == "Objetivo":

@@ -39,12 +39,7 @@ def loadConfig():
     
     return configDict
 
-
-def main():
-    # Faz a leitura dos parâmetros do ambiente
-    configDict = loadConfig()
-    print("dicionario config: ", configDict)
-
+def loadModelAndMaze(configDict):
     # Cria o ambiente (modelo) = Labirinto com suas paredes
     mesh = "square"
 
@@ -54,12 +49,19 @@ def main():
     model = Model(configDict["XMax"], configDict["YMax"], mesh, loadMaze)
     buildMaze(model)
 
-    model.maze.board.posAgent
-    model.maze.board.posGoal
     # Define a posição inicial do agente no ambiente - corresponde ao estado inicial
     model.setAgentPos(model.maze.board.posAgent[0],model.maze.board.posAgent[1])
-    model.setGoalPos(model.maze.board.posGoal[0],model.maze.board.posGoal[1])  
     model.draw()
+
+    return model
+
+def main():
+    # Faz a leitura dos parâmetros do ambiente
+    configDict = loadConfig()
+    print("dicionario config: ", configDict)
+
+    # Cria o ambiente (modelo)
+    model = loadModelAndMaze(configDict)
 
     # Cria um agente
     agent = AgentRnd(model,configDict)
