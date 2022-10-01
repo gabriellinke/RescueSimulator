@@ -5,29 +5,36 @@ from cardinal import *
 
 class Problem:
     """Representação de um problema a ser resolvido por um algoritmo de busca clássica.
-    A formulação do problema - instância desta classe - reside na 'mente' do agente."""
-
-
-    def __init__(self):
-        self.initialState = State(0,0)
+    A formulação do problema - instância desta classe - reside na 'mente' do agente.
+    @param basePosition: State com as coordenadas da base (início do agente)
+    @param goalState: State com as coordenadas do objetivo (Não utilizado)
+    @param maxRows: Número de linhas no mapa
+    @param maxColumns: Número de colunas no mapa
+    @param mazeBeliefs: matriz de tamanho maxRows*maxColumns, percepções do agente sobre o labirinto
+    # -1 são locais não explorado, 0 são locais explorados, -2 é parede, número maior que 0 é vítima (id da vítima)
+    """
+    def __init__(self, maxRows, maxColumns):
+        self.basePosition = State(0,0) 
         self.goalState = State(0,0)
-
-    def createMaze(self, maxRows, maxColumns, maze = False):
-        """Este método instancia um labirinto - representa o que o agente crê ser o labirinto.
-        As paredes devem ser colocadas fora desta classe porque este.
-        @param maxRows: máximo de linhas do labirinto.
-        @param maxColumns: máximo de colunas do labirinto."""
-        self.mazeBelief = maze
         self.maxRows = maxRows
         self.maxColumns = maxColumns
-        self.cost = [[0.0 for j in range(maxRows*maxColumns)]for i in range(8)]
+        self.mazeBeliefs = [[-1 for j in range(maxColumns)] for i in range(maxRows)]
 
-    def defInitialState(self, row, col):
+    def defBasePosition(self, row, col):
         """Define o estado inicial.
         @param row: linha do estado inicial.
         @param col: coluna do estado inicial."""
-        self.initialState.row = row
-        self.initialState.col = col
+        self.basePosition.row = row
+        self.basePosition.col = col
+
+    def setMaze(self, maze):
+        self.mazeBeliefs = maze
+
+    def updateMazePosition(self, coord, value):
+        """Atualiza a posição do mapa com o valor passado
+        @param coord: state com row e col do mapa que se quer atualizar
+        @param value: valor que deseja-se colocar nessa posição do mapa"""
+        self.mazeBeliefs[coord.row][coord.col] = value
 
     def defGoalState(self, row, col):
         """Define o estado objetivo.
@@ -42,6 +49,9 @@ class Problem:
         @return custo da ação"""
         if (action=="nop"):
             return 0
+
+        if (action=="checkVitalSignals"):
+            return 2.0
 
         if (action == "N" or action == "L" or action == "O" or action == "S"):   
             return 1.0

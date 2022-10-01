@@ -121,7 +121,6 @@ class MapTriangle:
         if self.selectPlace != False:
             obj = self.selectPlace.checkClickItens(posMouse)
             if obj != False:
-                print(obj)
                 if obj.itemInside == "Robô":                   
                     self.listPlaces[self.posAgent[0]][self.posAgent[1]].agent = False
                     self.posAgent = obj.ide

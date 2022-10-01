@@ -2,7 +2,6 @@
 import pygame, time, math, sys
 from pygame.locals import *
 
-
 class View:
     """Desenha o ambiente (o que est� representado no Model) em formato texto."""
     def __init__(self, model):
@@ -20,7 +19,7 @@ class View:
         pygame.init() 
 
         ## Define a largura e a altura da tela
-        self.largura = 900
+        self.largura = 600
         self.altura = 600
         ## Cria a tela, somando 300 na largura para colocar a parte de mostrar a saida
         #self.window = pygame.display.set_mode((self.largura + 300, self.altura)) ##Cria uma tela.. X e Y

@@ -58,7 +58,6 @@ def loadModelAndMaze(configDict):
 def main():
     # Faz a leitura dos parâmetros do ambiente
     configDict = loadConfig()
-    print("dicionario config: ", configDict)
 
     # Cria o ambiente (modelo)
     model = loadModelAndMaze(configDict)

@@ -36,16 +36,14 @@ class AgentRnd:
         self.mesh = self.model.mesh
 
         ## Cria a instância do problema na mente do agente (sao suas crencas)
-        self.prob = Problem()
-        self.prob.createMaze(model.rows, model.columns, model.maze)
-      
+        self.prob = Problem(model.rows, model.columns)
     
         # O agente le sua posica no ambiente por meio do sensor
         initial = self.positionSensor()
-        self.prob.defInitialState(initial.row, initial.col)
+        self.prob.defBasePosition(initial.row, initial.col)
         # Define o estado atual do agente = estado inicial
-        self.currentState = self.prob.initialState
-        print("*** Estado inicial do agente: ", self.prob.initialState)
+        self.currentState = self.prob.basePosition
+        print("*** Estado inicial do agente: ", self.prob.basePosition)
         print("*** Total de vitimas existentes no ambiente: ", self.model.getNumberOfVictims())
 
         """
