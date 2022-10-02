@@ -5,7 +5,7 @@ import time
 ## Importa as classes que serao usadas
 sys.path.append(os.path.join("pkg"))
 from model import Model
-from agentRnd import AgentRnd
+from agentExplorer import AgentExplorer
 
 
 ## Metodo utilizado para permitir que o usuario construa o labirindo clicando em cima
@@ -63,7 +63,7 @@ def main():
     model = loadModelAndMaze(configDict)
 
     # Cria um agente
-    agent = AgentRnd(model,configDict)
+    agent = AgentExplorer(model,configDict)
 
     while agent.deliberate() != -1:
         model.draw()

@@ -13,6 +13,7 @@ from random import randint
 
 ## Importa o algoritmo para o plano
 from randomPlan import RandomPlan
+from baseReturnPlan import BaseReturnPlan
 
 ##Importa o Planner
 sys.path.append(os.path.join("pkg", "planner"))
@@ -54,7 +55,7 @@ class AgentRnd:
         self.costAll = 0
 
         ## Cria a instancia do plano para se movimentar aleatoriamente no labirinto (sem nenhuma acao) 
-        self.plan = RandomPlan(model.rows, model.columns, self.prob.goalState, initial, "goal", self.mesh)
+        self.plan = RandomPlan(model.rows, model.columns, self.prob.goalState, initial, "explorar", self.mesh)
 
         ## Adiciona o(s) planos a biblioteca de planos do agente
         self.libPlan=[self.plan]
@@ -147,16 +148,16 @@ class AgentRnd:
     def checkForVictim(self):
         ## Verifica se tem vitima na posicao atual    
         victimId = self.victimPresenceSensor()
-        if victimId > 0: #Se encontrei vítima: tenho que adicionar a posição da vítima no mapa
-            if not(self.prob.isVictimInPosition(self.currentState)):
-                print ("vitima encontrada em ", self.currentState, " id: ", victimId, " sinais vitais: ", self.victimVitalSignalsSensor(victimId))
-                self.getVictimVitalSignals(victimId)
-                self.addVictimToMap(self.currentState, victimId)
+        if victimId > 0 and not self.prob.isVictimInPosition(self.currentState): #Se encontrei vítima e ela ainda não está no mapa: tenho que adicionar a posição da vítima no mapa
+            print ("vitima encontrada em ", self.currentState, " id: ", victimId, " sinais vitais: ", self.victimVitalSignalsSensor(victimId))
+            self.getVictimVitalSignals(victimId)
+            self.addVictimToMap(self.currentState, victimId)
 
     """Checa os sinais vitais da vítima especificada e consome o tempo dessa ação.
     @param victimId: o id da vítima"""
     def getVictimVitalSignals(self, victimId):
         self.time -= self.prob.getActionCost("checkVitalSignals")
+        self.costAll += self.prob.getActionCost("checkVitalSignals")
         vitalSignals = self.victimVitalSignalsSensor(victimId)
         self.prob.saveVitalSignals(vitalSignals[0])
         return vitalSignals

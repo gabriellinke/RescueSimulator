@@ -12,6 +12,7 @@ class RandomPlan:
         self.currentState = initialState
         self.goalPos = goal
         self.actions = []
+        self.name = name
 
 
     def updateCurrentState(self, state):
