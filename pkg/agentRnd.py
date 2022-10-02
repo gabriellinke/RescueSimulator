@@ -65,50 +65,37 @@ class AgentRnd:
 
     ## Metodo que define a deliberacao do agente 
     def deliberate(self):
-        ## Verifica se há algum plano a ser executado
-        if len(self.libPlan) == 0:
-            return -1   ## fim da execucao do agente, acabaram os planos
-        
-        ## Verifica se ainda tem tempo para executar
-        if self.time <= 0:
+
+        # Verifica se pode continuar deliberando
+        if not (self.canKeepExecuting()): 
             return -1
 
+        # Atualiza o plano que irá executar
         self.plan = self.libPlan[0]
 
+        # Inicia o raciocínio do agente
         print("\n*** Inicio do ciclo raciocinio ***")
         print("Pos agente no amb.: ", self.positionSensor())
 
-        ## Redefine o estado atual do agente de acordo com o resultado da execução da ação do ciclo anterior
-        self.currentState = self.positionSensor()
-        self.plan.updateCurrentState(self.currentState) # atualiza o current state no plano
-        print("Ag cre que esta em: ", self.currentState)
+        # Redefine o estado atual do agente de acordo com o resultado da execução da ação do ciclo anterior
+        self.updateCurrentState()
 
-        ## Verifica se a execução do acao do ciclo anterior funcionou ou nao
-        if not (self.currentState == self.expectedState):
-            print("---> erro na execucao da acao ", self.previousAction, ": esperava estar em ", self.expectedState, ", mas estou em ", self.currentState)
+        # Verifica se a execução da ação do ciclo anterior funcionou ou não
+        self.checkPreviousExecution()
 
-        ## Funcionou ou nao, vou somar o custo da acao com o total 
+        # Funcionou ou nao, vou somar o custo da acao com o total 
         self.costAll += self.prob.getActionCost(self.previousAction)
         print ("Custo até o momento (com a ação escolhida):", self.costAll) 
 
-        ## consome o tempo gasto
+        # consome o tempo gasto
         self.time -= self.prob.getActionCost(self.previousAction)
         print("Tempo disponivel: ", self.time)
         
-        ## Verifica se tem vitima na posicao atual    
-        victimId = self.victimPresenceSensor()
-        if victimId > 0:
-            print ("vitima encontrada em ", self.currentState, " id: ", victimId, " sinais vitais: ", self.victimVitalSignalsSensor(victimId))
+        # Verifica se tem alguma vítima na posição atual do robô
+        self.checkForVictim()
 
-        ## Define a proxima acao a ser executada
-        ## currentAction eh uma tupla na forma: <direcao>, <state>
-        result = self.plan.chooseAction()
-        print("Ag deliberou pela acao: ", result[0], " o estado resultado esperado é: ", result[1])
-
-        ## Executa esse acao, atraves do metodo executeGo 
-        self.executeGo(result[0])
-        self.previousAction = result[0]
-        self.expectedState = result[1]       
+        # Define a proxima acao a ser executada e executa-a
+        self.executeNextAction()
 
         return 1
 
@@ -152,3 +139,85 @@ class AgentRnd:
 
     def actionDo(self, posAction, action = True):
         self.model.do(posAction, action)
+
+    """Verifica se há uma vítima na posição atual do robô
+    Se tiver, faz a leitura dos sinais vitais, consome o tempo da leitura e
+    adiciona a vítima no mapa do robô
+    """
+    def checkForVictim(self):
+        ## Verifica se tem vitima na posicao atual    
+        victimId = self.victimPresenceSensor()
+        if victimId > 0: #Se encontrei vítima: tenho que adicionar a posição da vítima no mapa
+            if not(self.prob.isVictimInPosition(self.currentState)):
+                print ("vitima encontrada em ", self.currentState, " id: ", victimId, " sinais vitais: ", self.victimVitalSignalsSensor(victimId))
+                self.getVictimVitalSignals(victimId)
+                self.addVictimToMap(self.currentState, victimId)
+
+    """Checa os sinais vitais da vítima especificada e consome o tempo dessa ação.
+    @param victimId: o id da vítima"""
+    def getVictimVitalSignals(self, victimId):
+        self.time -= self.prob.getActionCost("checkVitalSignals")
+        return self.victimVitalSignalsSensor(victimId)
+
+    """Adiciona uma parede no mapa do robô na posição especificada
+    @param position: posição no mapa"""
+    def addWallToMap(self, position):
+        self.prob.updateMazePosition(position, -2)
+
+    """Adiciona uma posição explorada no mapa do robô na posição especificada
+    @param position: posição no mapa"""
+    def addExploredPositionToMap(self, position):
+        self.prob.updateMazePosition(position, 0)
+
+    """Adiciona uma vítima no mapa do robô na posição especificada
+    @param position: posição no mapa"""
+    def addVictimToMap(self, position, victimId):
+        self.prob.updateMazePosition(position, victimId)
+
+    """Verifica se ainda tem algum plano para executar e se ainda tem tempo para continuar executando o programa"""
+    def canKeepExecuting(self):
+        ## Verifica se há algum plano a ser executado
+        if len(self.libPlan) == 0:
+            return 0   ## fim da execucao do agente, acabaram os planos
+        
+        ## Verifica se ainda tem tempo para executar
+        if self.time <= 0:
+            self.prob.printWalls()
+            self.prob.printExplored()
+            self.prob.printVictims()
+            return 0 ## fim da execucao do agente, acabou o tempo
+
+        return 1
+
+    """Verifica qual a posição atual do agente e atualiza essa posição no plano do agente"""
+    def updateCurrentState(self):
+        self.currentState = self.positionSensor()
+        self.plan.updateCurrentState(self.currentState) # atualiza o current state no plano
+        print("Ag cre que esta em: ", self.currentState)
+
+    """Verifica se a ação foi executada com sucesso:
+    Se ela tiver funcionado, adiciono a posição atual como uma posição explorada no mapa
+    Se ela não tiver funcionado, adiciono a posição que eu esperava estar como uma posição com parede no mapa"""
+    def checkPreviousExecution(self):
+        if not (self.currentState == self.expectedState): #Ação não funcionou: tenho que marcar uma parede no mapa
+            print("---> erro na execucao da acao ", self.previousAction, ": esperava estar em ", self.expectedState, ", mas estou em ", self.currentState)
+            self.addWallToMap(self.expectedState)
+        else: #Ação funcionou: tenho que marcar o mapa como explorado
+            if not(self.prob.isVictimInPosition(self.currentState)):
+                self.addExploredPositionToMap(self.currentState)
+
+    """ Define a proxima acao a ser executada e então executa-a.
+        """
+    def executeNextAction(self):
+        # Escolhe a próxima ação de acordo com o plano que está sendo executado
+        result = self.plan.chooseAction()
+        # result é uma tupla na forma: <direcao>, <state>
+        action = result[0]
+        expectedState = result[1]
+        print("Ag deliberou pela acao: ", action, " o estado resultado esperado é: ", expectedState)
+
+        # Executa a próxima ação e atualiza a previousAction e o expectedState para verificar
+        # no próximo ciclo se a ação funcionou
+        self.executeGo(action)
+        self.previousAction = action
+        self.expectedState = expectedState
