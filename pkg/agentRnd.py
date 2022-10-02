@@ -157,7 +157,9 @@ class AgentRnd:
     @param victimId: o id da vítima"""
     def getVictimVitalSignals(self, victimId):
         self.time -= self.prob.getActionCost("checkVitalSignals")
-        return self.victimVitalSignalsSensor(victimId)
+        vitalSignals = self.victimVitalSignalsSensor(victimId)
+        self.prob.saveVitalSignals(vitalSignals[0])
+        return vitalSignals
 
     """Adiciona uma parede no mapa do robô na posição especificada
     @param position: posição no mapa"""
@@ -185,6 +187,7 @@ class AgentRnd:
             self.prob.printWalls()
             self.prob.printExplored()
             self.prob.printVictims()
+            self.prob.printVitalSignals()
             return 0 ## fim da execucao do agente, acabou o tempo
 
         return 1

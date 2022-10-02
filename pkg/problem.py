@@ -19,6 +19,7 @@ class Problem:
         self.maxRows = maxRows
         self.maxColumns = maxColumns
         self.mazeBeliefs = [[-1 for j in range(maxColumns)] for i in range(maxRows)]
+        self.victimsVitalSignals = []
 
     def defBasePosition(self, row, col):
         """Define o estado inicial.
@@ -40,6 +41,11 @@ class Problem:
         """Retorna 1 se a há uma vítima na coordenada e 0 se não há
         @param coord: state com row e col do mapa que se quer verificar se contém vítima"""
         return self.mazeBeliefs[coord.row][coord.col] > 0
+
+    def saveVitalSignals(self, vitalSignals):
+        """Retorna 1 se a há uma vítima na coordenada e 0 se não há
+        @param coord: state com row e col do mapa que se quer verificar se contém vítima"""
+        self.victimsVitalSignals.append(vitalSignals)
 
     def defGoalState(self, row, col):
         """Define o estado objetivo.
@@ -99,4 +105,7 @@ class Problem:
                 if(self.mazeBeliefs[i][j] > 0): victims.append([i, j])
         
         print("\nPosicoes com vitimas: \n", victims, "\n")
+
+    def printVitalSignals(self):
+        print("\nSinais vitais das vitimas: \n", self.victimsVitalSignals, "\n")
 
