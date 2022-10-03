@@ -12,8 +12,8 @@ from state import State
 from random import randint
 
 ## Importa o algoritmo para o plano
-from randomPlan import RandomPlan
 from baseReturnPlan import BaseReturnPlan
+from onlineDFSPlan import OnlineDFSPlan
 
 ##Importa o Planner
 sys.path.append(os.path.join("pkg", "planner"))
@@ -52,7 +52,7 @@ class AgentExplorer:
         self.costAll = 0
 
         ## Cria a instancia do plano para se movimentar aleatoriamente no labirinto (sem nenhuma acao) 
-        self.plan = RandomPlan(model.rows, model.columns, self.prob.goalState, initial, "explorar", self.mesh)
+        self.plan = OnlineDFSPlan(self.prob, initial, "explorar")
 
         ## Adiciona o(s) planos a biblioteca de planos do agente
         self.libPlan=[self.plan]
