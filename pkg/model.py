@@ -150,6 +150,8 @@ class Model:
         elif action =="SO":
             row = self.agentPos[0] + 1
             col = self.agentPos[1] - 1
+        elif action =="nop":
+            return
         
         if (self.isPossibleToMove(self.agentPos[0], self.agentPos[1], row, col) == 1):
             self.setAgentPos(row, col)            

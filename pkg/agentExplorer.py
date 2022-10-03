@@ -24,7 +24,8 @@ class AgentExplorer:
     def __init__(self, model, configDict):
         """ 
         Construtor do agente explorador
-        @param model referencia o ambiente onde o agente estah situado
+        @param model: referencia o ambiente onde o agente está situado
+        @parm configDict: configurações do ambiente
         """
 
         self.model = model
@@ -46,10 +47,6 @@ class AgentExplorer:
         self.currentState = self.prob.basePosition
         print("*** Estado inicial do agente: ", self.prob.basePosition)
         print("*** Total de vitimas existentes no ambiente: ", self.model.getNumberOfVictims())
-
-        """
-        DEFINE OS PLANOS DE EXECUÇÃO DO AGENTE
-        """
         
         ## Custo da solução
         self.costAll = 0
@@ -71,7 +68,9 @@ class AgentExplorer:
         if not (self.canKeepExecuting()): 
             return -1
 
+        # Se o plano atual não é voltar para a base, verifica se é necessário começar executar o plano de voltar para a base
         if (self.plan.name != "voltarBase"):
+            self.updateCurrentState()
             self.checkShouldReturnToBase()
 
         # Atualiza o plano que irá executar
@@ -106,17 +105,14 @@ class AgentExplorer:
     ## Metodo que executa as acoes
     def executeGo(self, action):
         """Atuador: solicita ao agente físico para executar a acao.
-        @param direction: Direcao da acao do agente {"N", "S", ...}
-        @return 1 caso movimentacao tenha sido executada corretamente """
+        @param action: Direcao da acao do agente {"N", "S", ...}"""
+
+        # Se o plano sendo executado é de voltar para a base e a ação foi um nop, quer dizer que o plano terminou
+        if (action == "nop" and self.plan.name == "voltarBase"):
+            self.libPlan.pop(0)
 
         ## Passa a acao para o modelo
         result = self.model.go(action)
-        
-        ## Se o resultado for True, significa que a acao foi completada com sucesso, e ja pode ser removida do plano
-        ## if (result[1]): ## atingiu objetivo ## TACLA 20220311
-        ##    del self.plan[0]
-        ##    self.actionDo((2,1), True)
-            
 
     ## Metodo que pega a posicao real do agente no ambiente
     def positionSensor(self):
@@ -184,6 +180,10 @@ class AgentExplorer:
     def canKeepExecuting(self):
         ## Verifica se há algum plano a ser executado
         if len(self.libPlan) == 0:
+            self.prob.printWalls()
+            self.prob.printExplored()
+            self.prob.printVictims()
+            self.prob.printVitalSignals()
             return 0   ## fim da execucao do agente, acabaram os planos
         
         ## Verifica se ainda tem tempo para executar
@@ -213,8 +213,7 @@ class AgentExplorer:
             if not(self.prob.isVictimInPosition(self.currentState)):
                 self.addExploredPositionToMap(self.currentState)
 
-    """ Define a proxima acao a ser executada e então executa-a.
-        """
+    """ Define a proxima acao a ser executada e então executa-a."""
     def executeNextAction(self):
         # Escolhe a próxima ação de acordo com o plano que está sendo executado
         result = self.plan.chooseAction()
@@ -229,9 +228,16 @@ class AgentExplorer:
         self.previousAction = action
         self.expectedState = expectedState
 
+    """ Verifica se o agente deveria iniciar a execução do plano de voltar para a base.
+    Se o agente ainda tem mais tempo sobrando do que ele usou até agora, quer dizer que tem tempo suficiente para continuar executando
+    Se tem menos tempo sobrando do que o tempo que usou até agora, cria um plano para voltar para a base e verifica quanto demoraria para voltar.
+    Se executando uma ação, um salvamento, e uma ação para voltar para o local atual o agente ainda teria tempo sobrando para voltar para a base
+    ele joga o plano fora e continua a execução do plano atual. No entanto, se ele não teria tempo para executar uma nova ação e um salvamento
+    ele atualiza o plano atual e volta para a base.
+    """
     def checkShouldReturnToBase(self):
-        if(self.time-3 <= self.costAll): # Se não passar no if é porque tem mais tempo sobrando do que gastou até agora, então terá tempo para retornar
-            plano = BaseReturnPlan(self.prob, "voltarBase") # Cria plano de voltar para a base
-            if (self.time - plano.getCost() <= 3 ): # Verifica se tem tempo sobrando caso execute mais uma ação. Se não tiver, inicia o plano de voltar para a base
+        if(self.time-4 <= self.costAll): # Se não passar no if é porque tem mais tempo sobrando do que gastou até agora, então terá tempo para retornar
+            plano = BaseReturnPlan(self.prob, self.currentState, "voltarBase") # Cria plano de voltar para a base
+            if (self.time - plano.getCost() <= 4 ): # Verifica se tem tempo sobrando caso execute mais uma ação. Se não tiver, inicia o plano de voltar para a base
                 self.libPlan.pop(0)
                 self.libPlan.append(plano)
