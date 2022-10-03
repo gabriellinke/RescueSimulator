@@ -6,7 +6,7 @@ import time
 sys.path.append(os.path.join("pkg"))
 from model import Model
 from agentExplorer import AgentExplorer
-
+from agentRescue import AgentRescue
 
 ## Metodo utilizado para permitir que o usuario construa o labirindo clicando em cima
 def buildMaze(model):
@@ -62,13 +62,21 @@ def main():
     # Cria o ambiente (modelo)
     model = loadModelAndMaze(configDict)
 
-    # Cria um agente
-    agent = AgentExplorer(model,configDict)
+    # Cria um agente explorador
+    agentExplorer = AgentExplorer(model, configDict["Te"])
 
-    while agent.deliberate() != -1:
+    while agentExplorer.deliberate() != -1:
         model.draw()
         time.sleep(0.001) # para dar tempo de visualizar as movimentacoes do agente no labirinto
-    model.draw()    
-        
+    model.draw()
+
+    # Cria um agente de resgate
+    agentRescue = AgentRescue(model, agentExplorer.prob, configDict["Ts"])
+
+    while agentRescue.deliberate() != -1:
+        model.draw()
+        time.sleep(0.3) # para dar tempo de visualizar as movimentacoes do agente no labirinto
+    model.draw()
+
 if __name__ == '__main__':
     main()

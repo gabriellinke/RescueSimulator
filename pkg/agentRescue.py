@@ -4,6 +4,7 @@
 ### Executa raciocíni on-line: percebe --> [delibera] --> executa ação --> percebe --> ...
 import sys
 import os
+import time as _time
 
 ## Importa Classes necessarias para o funcionamento
 from model import Model
@@ -13,19 +14,19 @@ from random import randint
 
 ## Importa o algoritmo para o plano
 from randomPlan import RandomPlan
-from baseReturnPlan import BaseReturnPlan
 
 ##Importa o Planner
 sys.path.append(os.path.join("pkg", "planner"))
 from planner import Planner
 
-## Classe que define o Agente
-class AgentExplorer:
-    def __init__(self, model, time):
+## Classe que define o Agente de resgate
+class AgentRescue:
+    def __init__(self, model, problem, time):
         """ 
-        Construtor do agente explorador
-        @param model: referencia o ambiente onde o agente está situado
-        @parm time: tempo para execução
+        Construtor do agente random
+        @param model referencia o ambiente onde o agente estah situado
+        @param problem: crenças do agente
+        @param time: tempo para execução
         """
 
         self.model = model
@@ -38,8 +39,15 @@ class AgentExplorer:
         self.mesh = self.model.mesh
 
         ## Cria a instância do problema na mente do agente (sao suas crencas)
-        self.prob = Problem(model.rows, model.columns)
-    
+        self.prob = problem
+
+        print("\n\n*** Agente de resgate, informações do problema: ")
+        self.prob.printWalls()
+        self.prob.printExplored()
+        self.prob.printVictims()
+        self.prob.printVitalSignals()
+        _time.sleep(10)
+
         # O agente le sua posica no ambiente por meio do sensor
         initial = self.positionSensor()
         self.prob.defBasePosition(initial.row, initial.col)
@@ -47,6 +55,10 @@ class AgentExplorer:
         self.currentState = self.prob.basePosition
         print("*** Estado inicial do agente: ", self.prob.basePosition)
         print("*** Total de vitimas existentes no ambiente: ", self.model.getNumberOfVictims())
+
+        """
+        DEFINE OS PLANOS DE EXECUÇÃO DO AGENTE
+        """
         
         ## Custo da solução
         self.costAll = 0
@@ -68,11 +80,6 @@ class AgentExplorer:
         if not (self.canKeepExecuting()): 
             return -1
 
-        # Se o plano atual não é voltar para a base, verifica se é necessário começar executar o plano de voltar para a base
-        if (self.plan.name != "voltarBase"):
-            self.updateCurrentState()
-            self.checkShouldReturnToBase()
-
         # Atualiza o plano que irá executar
         self.plan = self.libPlan[0]
 
@@ -83,9 +90,6 @@ class AgentExplorer:
         # Redefine o estado atual do agente de acordo com o resultado da execução da ação do ciclo anterior
         self.updateCurrentState()
 
-        # Verifica se a execução da ação do ciclo anterior funcionou ou não
-        self.checkPreviousExecution()
-
         # Funcionou ou nao, vou somar o custo da acao com o total 
         self.costAll += self.prob.getActionCost(self.previousAction)
         print ("Custo até o momento (com a ação escolhida):", self.costAll) 
@@ -93,9 +97,6 @@ class AgentExplorer:
         # consome o tempo gasto
         self.time -= self.prob.getActionCost(self.previousAction)
         print("Tempo disponivel: ", self.time)
-        
-        # Verifica se tem alguma vítima na posição atual do robô
-        self.checkForVictim()
 
         # Define a proxima acao a ser executada e executa-a
         self.executeNextAction()
@@ -105,14 +106,17 @@ class AgentExplorer:
     ## Metodo que executa as acoes
     def executeGo(self, action):
         """Atuador: solicita ao agente físico para executar a acao.
-        @param action: Direcao da acao do agente {"N", "S", ...}"""
-
-        # Se o plano sendo executado é de voltar para a base e a ação foi um nop, quer dizer que o plano terminou
-        if (action == "nop" and self.plan.name == "voltarBase"):
-            self.libPlan.pop(0)
+        @param direction: Direcao da acao do agente {"N", "S", ...}
+        @return 1 caso movimentacao tenha sido executada corretamente """
 
         ## Passa a acao para o modelo
         result = self.model.go(action)
+        
+        ## Se o resultado for True, significa que a acao foi completada com sucesso, e ja pode ser removida do plano
+        ## if (result[1]): ## atingiu objetivo ## TACLA 20220311
+        ##    del self.plan[0]
+        ##    self.actionDo((2,1), True)
+            
 
     ## Metodo que pega a posicao real do agente no ambiente
     def positionSensor(self):
@@ -140,42 +144,6 @@ class AgentExplorer:
     def actionDo(self, posAction, action = True):
         self.model.do(posAction, action)
 
-    """Verifica se há uma vítima na posição atual do robô
-    Se tiver, faz a leitura dos sinais vitais, consome o tempo da leitura e
-    adiciona a vítima no mapa do robô
-    """
-    def checkForVictim(self):
-        ## Verifica se tem vitima na posicao atual    
-        victimId = self.victimPresenceSensor()
-        if victimId > 0 and not self.prob.isVictimInPosition(self.currentState): #Se encontrei vítima e ela ainda não está no mapa: tenho que adicionar a posição da vítima no mapa
-            print ("vitima encontrada em ", self.currentState, " id: ", victimId, " sinais vitais: ", self.victimVitalSignalsSensor(victimId))
-            self.getVictimVitalSignals(victimId)
-            self.addVictimToMap(self.currentState, victimId)
-
-    """Checa os sinais vitais da vítima especificada e consome o tempo dessa ação.
-    @param victimId: o id da vítima"""
-    def getVictimVitalSignals(self, victimId):
-        self.time -= self.prob.getActionCost("checkVitalSignals")
-        self.costAll += self.prob.getActionCost("checkVitalSignals")
-        vitalSignals = self.victimVitalSignalsSensor(victimId)
-        self.prob.saveVitalSignals(vitalSignals[0])
-        return vitalSignals
-
-    """Adiciona uma parede no mapa do robô na posição especificada
-    @param position: posição no mapa"""
-    def addWallToMap(self, position):
-        self.prob.updateMazePosition(position, -2)
-
-    """Adiciona uma posição explorada no mapa do robô na posição especificada
-    @param position: posição no mapa"""
-    def addExploredPositionToMap(self, position):
-        self.prob.updateMazePosition(position, 0)
-
-    """Adiciona uma vítima no mapa do robô na posição especificada
-    @param position: posição no mapa"""
-    def addVictimToMap(self, position, victimId):
-        self.prob.updateMazePosition(position, victimId)
-
     """Verifica se ainda tem algum plano para executar e se ainda tem tempo para continuar executando o programa"""
     def canKeepExecuting(self):
         ## Verifica se há algum plano a ser executado
@@ -194,18 +162,8 @@ class AgentExplorer:
         self.plan.updateCurrentState(self.currentState) # atualiza o current state no plano
         print("Ag cre que esta em: ", self.currentState)
 
-    """Verifica se a ação foi executada com sucesso:
-    Se ela tiver funcionado, adiciono a posição atual como uma posição explorada no mapa
-    Se ela não tiver funcionado, adiciono a posição que eu esperava estar como uma posição com parede no mapa"""
-    def checkPreviousExecution(self):
-        if not (self.currentState == self.expectedState): #Ação não funcionou: tenho que marcar uma parede no mapa
-            print("---> erro na execucao da acao ", self.previousAction, ": esperava estar em ", self.expectedState, ", mas estou em ", self.currentState)
-            self.addWallToMap(self.expectedState)
-        else: #Ação funcionou: tenho que marcar o mapa como explorado
-            if not(self.prob.isVictimInPosition(self.currentState)):
-                self.addExploredPositionToMap(self.currentState)
-
-    """ Define a proxima acao a ser executada e então executa-a."""
+    """ Define a proxima acao a ser executada e então executa-a.
+        """
     def executeNextAction(self):
         # Escolhe a próxima ação de acordo com o plano que está sendo executado
         result = self.plan.chooseAction()
@@ -219,17 +177,3 @@ class AgentExplorer:
         self.executeGo(action)
         self.previousAction = action
         self.expectedState = expectedState
-
-    """ Verifica se o agente deveria iniciar a execução do plano de voltar para a base.
-    Se o agente ainda tem mais tempo sobrando do que ele usou até agora, quer dizer que tem tempo suficiente para continuar executando
-    Se tem menos tempo sobrando do que o tempo que usou até agora, cria um plano para voltar para a base e verifica quanto demoraria para voltar.
-    Se executando uma ação, um salvamento, e uma ação para voltar para o local atual o agente ainda teria tempo sobrando para voltar para a base
-    ele joga o plano fora e continua a execução do plano atual. No entanto, se ele não teria tempo para executar uma nova ação e um salvamento
-    ele atualiza o plano atual e volta para a base.
-    """
-    def checkShouldReturnToBase(self):
-        if(self.time-4 <= self.costAll): # Se não passar no if é porque tem mais tempo sobrando do que gastou até agora, então terá tempo para retornar
-            plano = BaseReturnPlan(self.prob, self.currentState, "voltarBase") # Cria plano de voltar para a base
-            if (self.time - plano.getCost() <= 4 ): # Verifica se tem tempo sobrando caso execute mais uma ação. Se não tiver, inicia o plano de voltar para a base
-                self.libPlan.pop(0)
-                self.libPlan.append(plano)
