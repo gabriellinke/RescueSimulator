@@ -1,0 +1,7 @@
+BaseLin=7
+BaseCol=4
+maxLin=10
+maxCol=10
+Te=600
+Ts=400
+numVictims=10
