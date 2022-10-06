@@ -246,7 +246,7 @@ class GreedyPathPlan:
             # print(filter(lambda x: x[0] == victim_id, self.prob.victimsVitalSignals))
             # print(victim_id)
             gravity = math.floor((100 - vital_signals[6]) / 25) + 1
-            gravity_per_cost = gravity / total_cost
+            gravity_per_cost = gravity / cost
             # print(victim, end=" -> ")
             # print(gravity_per_cost)
             
