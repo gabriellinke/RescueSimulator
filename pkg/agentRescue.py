@@ -18,7 +18,7 @@ from greedyPathPlan import GreedyPathPlan
 
 ## Classe que define o Agente de resgate
 class AgentRescue:
-    def __init__(self, model, problem, time):
+    def __init__(self, model, problem, time, debug_mode):
         """ 
         Construtor do agente rescue
         @param model referencia o ambiente onde o agente estah situado
@@ -26,6 +26,7 @@ class AgentRescue:
         @param time: tempo para execução
         """
 
+        self.debug = debug_mode
         self.model = model
 
         ## Obtem o tempo que tem para executar
@@ -38,11 +39,11 @@ class AgentRescue:
         ## Cria a instância do problema na mente do agente (sao suas crencas)
         self.prob = problem
 
-        print("\n\n*** Agente de resgate, informações do problema: ")
-        self.prob.printWalls()
-        self.prob.printExplored()
-        self.prob.printVictims()
-        self.prob.printVitalSignals()
+        # print("\n\n*** Agente de resgate, informações do problema: ")
+        # self.prob.printWalls()
+        # self.prob.printExplored()
+        # self.prob.printVictims()
+        # self.prob.printVitalSignals()
 
         # O agente le sua posica no ambiente por meio do sensor
         initial = self.positionSensor()
@@ -80,19 +81,22 @@ class AgentRescue:
         self.plan = self.libPlan[0]
 
         # Inicia o raciocínio do agente
-        print("\n*** Inicio do ciclo raciocinio ***")
-        print("Pos agente no amb.: ", self.positionSensor())
+        if(self.debug):
+            print("\n*** Inicio do ciclo raciocinio ***")
+            print("Pos agente no amb.: ", self.positionSensor())
 
         # Redefine o estado atual do agente de acordo com o resultado da execução da ação do ciclo anterior
         self.updateCurrentState()
 
         # Funcionou ou nao, vou somar o custo da acao com o total 
         self.costAll += self.prob.getActionCost(self.previousAction)
-        print ("Custo até o momento (com a ação escolhida):", self.costAll) 
+        if(self.debug):
+            print ("Custo até o momento (com a ação escolhida):", self.costAll) 
 
         # consome o tempo gasto
         self.time -= self.prob.getActionCost(self.previousAction)
-        print("Tempo disponivel: ", self.time)
+        if(self.debug):
+            print("Tempo disponivel: ", self.time)
 
         # Define a proxima acao a ser executada e executa-a
         self.executeNextAction()
@@ -156,7 +160,8 @@ class AgentRescue:
     def updateCurrentState(self):
         self.currentState = self.positionSensor()
         self.plan.updateCurrentState(self.currentState, self.time) # atualiza o current state no plano
-        print("Ag cre que esta em: ", self.currentState)
+        if(self.debug):
+            print("Ag cre que esta em: ", self.currentState)
 
     """ Define a proxima acao a ser executada e então executa-a.
         """
@@ -166,7 +171,8 @@ class AgentRescue:
         # result é uma tupla na forma: <direcao>, <state>
         action = result[0]
         expectedState = result[1]
-        print("Ag deliberou pela acao: ", action, " o estado resultado esperado é: ", expectedState)
+        if(self.debug):
+            print("Ag deliberou pela acao: ", action, " o estado resultado esperado é: ", expectedState)
 
         # a ação "nop" só ocorre quando acabam as opções do agente
         # por isso, a execução já pode parar depois de retornar o primeiro "nop"

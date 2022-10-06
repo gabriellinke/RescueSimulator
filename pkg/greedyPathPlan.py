@@ -266,7 +266,10 @@ class GreedyPathPlan:
         print("Número de vítimas encontradas: ", len(self.victimsPositions))
         print("Tempo total gasto pelo agente: ", totalCost)
         print("pvs: ", vs / V)
-        print("tvs: ", totalCost / vs)
+        if not (vs):
+            print("tvs: ", math.inf)
+        else:
+            print("tvs: ", totalCost / vs)
         vsg = 0
         Vi = [0, 0, 0, 0]
         for v in victimsVitalSignals:

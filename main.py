@@ -55,25 +55,34 @@ def loadModelAndMaze(configDict):
 
     return model
 
+def get_args():
+    import argparse
+    parser = argparse.ArgumentParser(description="Rescue Simulator")
+    parser.add_argument("-d", "--debug", help="Debug mode", action="store_false", default=True)
+    args = parser.parse_args()
+    return args
+
+
 def main():
     # Faz a leitura dos parâmetros do ambiente
     configDict = loadConfig()
+
+    # Pega argumentos da linha de comando
+    args = get_args()
 
     # Cria o ambiente (modelo)
     model = loadModelAndMaze(configDict)
 
     # Cria um agente explorador
-    agentExplorer = AgentExplorer(model, configDict["Te"])
+    agentExplorer = AgentExplorer(model, configDict["Te"], args.debug)
 
     while agentExplorer.deliberate() != -1:
         model.draw()
         time.sleep(0.001) # para dar tempo de visualizar as movimentacoes do agente no labirinto
     model.draw()
 
-    agentExplorer.printStatistics()
     # Cria um agente de resgate
-    agentRescue = AgentRescue(model, agentExplorer.prob, configDict["Ts"])
-    # time.sleep(3)
+    agentRescue = AgentRescue(model, agentExplorer.prob, configDict["Ts"], args.debug)
 
     while agentRescue.deliberate() != -1:
         model.draw()

@@ -22,13 +22,14 @@ from planner import Planner
 
 ## Classe que define o Agente
 class AgentExplorer:
-    def __init__(self, model, time):
+    def __init__(self, model, time, debug_mode):
         """ 
         Construtor do agente explorador
         @param model: referencia o ambiente onde o agente está situado
         @parm time: tempo para execução
         """
 
+        self.debug = debug_mode
         self.model = model
 
         ## Obtem o tempo que tem para executar
@@ -79,8 +80,9 @@ class AgentExplorer:
         self.plan = self.libPlan[0]
 
         # Inicia o raciocínio do agente
-        print("\n*** Inicio do ciclo raciocinio ***")
-        print("Pos agente no amb.: ", self.positionSensor())
+        if(self.debug):
+            print("\n*** Inicio do ciclo raciocinio ***")
+            print("Pos agente no amb.: ", self.positionSensor())
 
         # Redefine o estado atual do agente de acordo com o resultado da execução da ação do ciclo anterior
         self.updateCurrentState()
@@ -90,11 +92,13 @@ class AgentExplorer:
 
         # Funcionou ou nao, vou somar o custo da acao com o total 
         self.costAll += self.prob.getActionCost(self.previousAction)
-        print ("Custo até o momento (com a ação escolhida):", self.costAll) 
+        if(self.debug):
+            print ("Custo até o momento (com a ação escolhida):", self.costAll) 
 
         # consome o tempo gasto
         self.time -= self.prob.getActionCost(self.previousAction)
-        print("Tempo disponivel: ", self.time)
+        if(self.debug):
+            print("Tempo disponivel: ", self.time)
         
         # Verifica se tem alguma vítima na posição atual do robô
         self.checkForVictim()
@@ -112,6 +116,7 @@ class AgentExplorer:
         # Se o plano sendo executado é de voltar para a base e a ação foi um nop, quer dizer que o plano terminou
         if (action == "nop" and self.plan.name == "voltarBase"):
             self.libPlan.pop(0)
+            self.printStatistics()
 
         # Se já terminei de executar a DFS, cria um plano para voltar para a base
         if (action == "nop" and self.plan.name == "explorar"):
@@ -155,7 +160,8 @@ class AgentExplorer:
         ## Verifica se tem vitima na posicao atual    
         victimId = self.victimPresenceSensor()
         if victimId > 0 and not self.prob.isVictimInPosition(self.currentState): #Se encontrei vítima e ela ainda não está no mapa: tenho que adicionar a posição da vítima no mapa
-            print ("vitima encontrada em ", self.currentState, " id: ", victimId, " sinais vitais: ", self.victimVitalSignalsSensor(victimId))
+            if(self.debug):
+                print ("vitima encontrada em ", self.currentState, " id: ", victimId, " sinais vitais: ", self.victimVitalSignalsSensor(victimId))
             self.getVictimVitalSignals(victimId)
             self.addVictimToMap(self.currentState, victimId)
 
@@ -199,14 +205,16 @@ class AgentExplorer:
     def updateCurrentState(self):
         self.currentState = self.positionSensor()
         self.plan.updateCurrentState(self.currentState) # atualiza o current state no plano
-        print("Ag cre que esta em: ", self.currentState)
+        if(self.debug):
+            print("Ag cre que esta em: ", self.currentState)
 
     """Verifica se a ação foi executada com sucesso:
     Se ela tiver funcionado, adiciono a posição atual como uma posição explorada no mapa
     Se ela não tiver funcionado, adiciono a posição que eu esperava estar como uma posição com parede no mapa"""
     def checkPreviousExecution(self):
         if not (self.currentState == self.expectedState): #Ação não funcionou: tenho que marcar uma parede no mapa
-            print("---> erro na execucao da acao ", self.previousAction, ": esperava estar em ", self.expectedState, ", mas estou em ", self.currentState)
+            if(self.debug):
+                print("---> erro na execucao da acao ", self.previousAction, ": esperava estar em ", self.expectedState, ", mas estou em ", self.currentState)
             self.addWallToMap(self.expectedState)
         else: #Ação funcionou: tenho que marcar o mapa como explorado
             if not(self.prob.isVictimInPosition(self.currentState)):
@@ -219,7 +227,8 @@ class AgentExplorer:
         # result é uma tupla na forma: <direcao>, <state>
         action = result[0]
         expectedState = result[1]
-        print("Ag deliberou pela acao: ", action, " o estado resultado esperado é: ", expectedState)
+        if(self.debug):
+            print("Ag deliberou pela acao: ", action, " o estado resultado esperado é: ", expectedState)
 
         # Executa a próxima ação e atualiza a previousAction e o expectedState para verificar
         # no próximo ciclo se a ação funcionou
@@ -247,7 +256,9 @@ class AgentExplorer:
     veg: Porcentual ponderado de vítimas encontradas por gravidade
     """
     def printStatistics(self):
-        print("\npve: ", self.getPve(), "\ntve: ", self.getTve(), "\nveg: ", self.getVeg(), "\n")
+        print("\nNúmero de vítimas encontradas: ", len(self.prob.getVictims()))
+        print("Tempo total gasto pelo agente: ", self.costAll)
+        print("pve: ", self.getPve(), "\ntve: ", self.getTve(), "\nveg: ", self.getVeg(), "\n")
 
     """
     Pega a gravidade das vítimas que o agente encontrou durante a exploração e cria um vetor com o número de vítimas por gravidade.
