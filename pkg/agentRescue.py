@@ -1,6 +1,7 @@
-## AGENTE RANDOM
-### @Author: Luan Klein e Tacla (UTFPR)
-### Agente que fixa um objetivo aleatório e anda aleatoriamente pelo labirinto até encontrá-lo.
+## AGENTE RESCUE
+### @Author: Gabriel Linke e Thiago de Mendonça (UTFPR)
+### Agente que recebe informações coletadas pelo Agente Explorador e tenta
+### resgatar o máximo de vítimas possível, priorizando gravidade em certa medida
 ### Executa raciocíni on-line: percebe --> [delibera] --> executa ação --> percebe --> ...
 import sys
 import os
@@ -13,17 +14,13 @@ from state import State
 from random import randint
 
 ## Importa o algoritmo para o plano
-from randomPlan import RandomPlan
-
-##Importa o Planner
-sys.path.append(os.path.join("pkg", "planner"))
-from planner import Planner
+from greedyPathPlan import GreedyPathPlan
 
 ## Classe que define o Agente de resgate
 class AgentRescue:
     def __init__(self, model, problem, time):
         """ 
-        Construtor do agente random
+        Construtor do agente rescue
         @param model referencia o ambiente onde o agente estah situado
         @param problem: crenças do agente
         @param time: tempo para execução
@@ -46,7 +43,6 @@ class AgentRescue:
         self.prob.printExplored()
         self.prob.printVictims()
         self.prob.printVitalSignals()
-        _time.sleep(10)
 
         # O agente le sua posica no ambiente por meio do sensor
         initial = self.positionSensor()
@@ -63,11 +59,11 @@ class AgentRescue:
         ## Custo da solução
         self.costAll = 0
 
-        ## Cria a instancia do plano para se movimentar aleatoriamente no labirinto (sem nenhuma acao) 
-        self.plan = RandomPlan(model.rows, model.columns, self.prob.goalState, initial, "explorar", self.mesh)
+        ## Cria a instancia do plano para decidir o caminho a seguir
+        self.plan = GreedyPathPlan(self.prob, initial, time)
 
         ## Adiciona o(s) planos a biblioteca de planos do agente
-        self.libPlan=[self.plan]
+        self.libPlan = [self.plan]
 
         ## inicializa acao do ciclo anterior com o estado esperado
         self.previousAction = "nop"    ## nenhuma (no operation)
@@ -125,21 +121,21 @@ class AgentRescue:
         pos = self.model.agentPos
         return State(pos[0],pos[1])
 
-    def victimPresenceSensor(self):
-        """Simula um sensor que realiza a deteccao de presenca de vitima na posicao onde o agente se encontra no ambiente
-           @return retorna o id da vítima"""     
-        return self.model.isThereVictim()
+    # def victimPresenceSensor(self):
+    #     """Simula um sensor que realiza a deteccao de presenca de vitima na posicao onde o agente se encontra no ambiente
+    #        @return retorna o id da vítima"""     
+    #     return self.model.isThereVictim()
 
-    def victimVitalSignalsSensor(self, victimId):
-        """Simula um sensor que realiza a leitura dos sinais da vitima 
-        @param o id da vítima
-        @return a lista de sinais vitais (ou uma lista vazia se não tem vítima com o id)"""     
-        return self.model.getVictimVitalSignals(victimId)
+    # def victimVitalSignalsSensor(self, victimId):
+    #     """Simula um sensor que realiza a leitura dos sinais da vitima 
+    #     @param o id da vítima
+    #     @return a lista de sinais vitais (ou uma lista vazia se não tem vítima com o id)"""     
+    #     return self.model.getVictimVitalSignals(victimId)
     
     ## Metodo que atualiza a biblioteca de planos, de acordo com o estado atual do agente
     def updateLibPlan(self):
         for i in self.libPlan:
-            i.updateCurrentState(self.currentState)
+            i.updateCurrentState(self.currentState, self.time)
 
     def actionDo(self, posAction, action = True):
         self.model.do(posAction, action)
@@ -159,7 +155,7 @@ class AgentRescue:
     """Verifica qual a posição atual do agente e atualiza essa posição no plano do agente"""
     def updateCurrentState(self):
         self.currentState = self.positionSensor()
-        self.plan.updateCurrentState(self.currentState) # atualiza o current state no plano
+        self.plan.updateCurrentState(self.currentState, self.time) # atualiza o current state no plano
         print("Ag cre que esta em: ", self.currentState)
 
     """ Define a proxima acao a ser executada e então executa-a.
@@ -172,8 +168,19 @@ class AgentRescue:
         expectedState = result[1]
         print("Ag deliberou pela acao: ", action, " o estado resultado esperado é: ", expectedState)
 
+        # a ação "nop" só ocorre quando acabam as opções do agente
+        # por isso, a execução já pode parar depois de retornar o primeiro "nop"
+        if action == "nop":
+            self.printMetrics()
+            self.libPlan.remove(self.plan)
+
         # Executa a próxima ação e atualiza a previousAction e o expectedState para verificar
         # no próximo ciclo se a ação funcionou
         self.executeGo(action)
         self.previousAction = action
         self.expectedState = expectedState
+
+    def printMetrics(self):
+        V = self.model.getNumberOfVictims()
+        victimsVitalSignals = [self.model.getVictimVitalSignals(victimId)[0] for victimId in range(1, V+1)]
+        self.plan.printMetrics(self.costAll, victimsVitalSignals, V)
