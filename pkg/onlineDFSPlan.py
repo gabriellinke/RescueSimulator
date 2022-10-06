@@ -48,8 +48,8 @@ class OnlineDFSPlan:
     def getNextPosition(self):
         """ Pega uma ação ainda não tentada no estado atual e calcula a posicao futura do agente.
         Se não tem mais nenhuma ação, volta para o estado que fez com que o agente chegasse no estado atual
-        Se não tiver mais nada para executar, vai para uma posição aleatória pra tentar encontrar algum lugar que dê continuidade para a busca
-         return: tupla contendo a acao (direcao) e o estado futuro resultante da movimentacao """
+        Se não tiver mais nada para executar, termina a execução
+        return: tupla contendo a acao (direcao) e o estado futuro resultante da movimentacao """
 
         position = (self.currentState.row, self.currentState.col)
         possibilities = self.untried[position].copy() # As possibilidades de movimentos são os movimentos que não tentei fazer ainda
@@ -73,8 +73,9 @@ class OnlineDFSPlan:
                 state = State(backtrackState[0], backtrackState[1]) # Coordenada para onde quero ir
                 direction = (backtrackState[0] - position[0], backtrackState[1] - position[1])
                 movDirection = list(movePos.keys())[list(movePos.values()).index(direction)] # Direção pra que preciso ir para chegar na coordenada desejada
-            else: # Se não tem nenhum nó em unbacktracked, vai para uma posição aleatória pra tentar encontrar algum lugar que dê continuidade para a busca
-                return self.randomizeNextPosition()
+            else: # Se não tem nenhum nó em unbacktracked, termina a execução
+                movDirection = "nop"
+                state = self.currentState
 
         return movDirection, state
 
@@ -109,20 +110,3 @@ class OnlineDFSPlan:
     def isCoordinateValid(self, coord):
         """ Verifica se é uma coordenada dentro das fronteiras do mapa """
         return coord[0] >= 0 and coord[1] >= 0 and coord[0] < self.prob.maxRows and coord[1] < self.prob.maxColumns
-
-    def randomizeNextPosition(self):
-         """ Sorteia uma direcao e calcula a posicao futura do agente 
-         @return: tupla contendo a acao (direcao) e o estado futuro resultante da movimentacao """
-         possibilities = ["N", "S", "L", "O"]
-         movePos = { "N" : (-1, 0),
-                    "S" : (1, 0),
-                    "L" : (0, 1),
-                    "O" : (0, -1),
-                    }
-
-         rand = randint(0, 3)
-         movDirection = possibilities[rand]
-         state = State(self.currentState.row + movePos[movDirection][0], self.currentState.col + movePos[movDirection][1])
-
-         return movDirection, state
-

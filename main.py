@@ -70,6 +70,7 @@ def main():
         time.sleep(0.001) # para dar tempo de visualizar as movimentacoes do agente no labirinto
     model.draw()
 
+    agentExplorer.printStatistics()
     # Cria um agente de resgate
     agentRescue = AgentRescue(model, agentExplorer.prob, configDict["Ts"])
 

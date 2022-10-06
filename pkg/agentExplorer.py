@@ -32,6 +32,7 @@ class AgentExplorer:
 
         ## Obtem o tempo que tem para executar
         self.time = time
+        self.totalTime = time
         print("Tempo disponivel: ", self.time)
         
         ## Pega o tipo de mesh, que está no model (influência na movimentação)
@@ -110,6 +111,11 @@ class AgentExplorer:
         # Se o plano sendo executado é de voltar para a base e a ação foi um nop, quer dizer que o plano terminou
         if (action == "nop" and self.plan.name == "voltarBase"):
             self.libPlan.pop(0)
+
+        # Se já terminei de executar a DFS, cria um plano para voltar para a base
+        if (action == "nop" and self.plan.name == "explorar"):
+            self.libPlan.pop(0)
+            self.libPlan.append(BaseReturnPlan(self.prob, self.currentState, "voltarBase"))
 
         ## Passa a acao para o modelo
         result = self.model.go(action)
@@ -233,3 +239,73 @@ class AgentExplorer:
             if (self.time - plano.getCost() <= 4 ): # Verifica se tem tempo sobrando caso execute mais uma ação. Se não tiver, inicia o plano de voltar para a base
                 self.libPlan.pop(0)
                 self.libPlan.append(plano)
+
+    """Printa as estatísticas do agente: 
+    pve: Porcentual de vítimas encontradas pelo Agente Explorador no tempo Te
+    tve: Tempo por vítima encontrada 
+    veg: Porcentual ponderado de vítimas encontradas por gravidade
+    """
+    def printStatistics(self):
+        print("\npve: ", self.getPve(), "\ntve: ", self.getTve(), "\nveg: ", self.getVeg(), "\n")
+
+    """
+    Pega a gravidade das vítimas que o agente encontrou durante a exploração e cria um vetor com o número de vítimas por gravidade.
+    O número de vítimas com gravidade 1 fica na posição 1, gravidade 2 na posição 2, e assim por diante.
+    """
+    def getFoundVictimsSeverity(self):
+        severityArray = [0 for col in range(5)]
+        victims = self.prob.getVictims()
+        for victim in victims:
+            victimId = self.prob.mazeBeliefs[victim[0]][victim[1]]
+            vitalSignals = self.model.getVictimVitalSignals(victimId)[0]
+            victimSeverity = vitalSignals[len(vitalSignals)-1]
+            severityArray[int(victimSeverity//25+1)] += 1
+        return severityArray
+
+    """
+    Pega a gravidade de todas as vítimas no labirinto e cria um vetor com o número de vítimas por gravidade.
+    O número de vítimas com gravidade 1 fica na posição 1, gravidade 2 na posição 2, e assim por diante.
+    """
+    def getAllVictimsSeverity(self):
+        severityArray = [0 for col in range(5)]
+        numberOfVictims = self.model.maze.numberOfVictims
+        for i in range(numberOfVictims):
+            victimId = i+1
+            vitalSignals = self.model.getVictimVitalSignals(victimId)[0]
+            victimSeverity = vitalSignals[len(vitalSignals)-1]
+            severityArray[int(victimSeverity//25+1)] += 1
+        return severityArray
+
+    """Porcentual de vítimas encontradas pelo Agente Explorador no tempo Te
+    pve = ve/|V|
+    ve = vítimas encontradas
+    |V| = total de vítimas (sabido a partir do arquivo de entrada)
+    no intervalo [0 ,1]
+    """
+    def getPve(self):
+        totalVictims = self.model.getNumberOfVictims()
+        foundVictims = len(self.prob.getVictims())
+        return foundVictims/totalVictims
+
+    """
+    Tempo por vítima encontrada 
+    tve = te/ve
+    te = tempo efetivamente gasto para localizar vítimas e voltar a base (pode ser menor ou igual à Te)
+    """
+    def getTve(self):
+        foundVictims = len(self.prob.getVictims())
+        return (self.totalTime-self.time)/foundVictims
+
+    """
+    Porcentual ponderado de vítimas encontradas por gravidade
+    CRÍTICA:        [0, 25]  label 1 (peso 4)
+    INSTÁVEL:   ]25, 50] label 2 (peso 3)
+    POT. INST:   ]50, 75]  label 3 (peso 2)
+    ESTÁVEL:  ]75, 100]  label 4 (peso 1)
+    """
+    def getVeg(self):
+        allVictimsSeverity = self.getAllVictimsSeverity()
+        foundVictimsSeverity = self.getFoundVictimsSeverity()
+        ve = foundVictimsSeverity
+        V = allVictimsSeverity
+        return (4*ve[1] + 3*ve[2] + 2*ve[3] + ve[4])/(4*V[1] + 3*V[2] + 2*V[3] + V[4])

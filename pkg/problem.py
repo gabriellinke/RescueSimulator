@@ -99,13 +99,17 @@ class Problem:
 
     """Função utilizada para debug, printa as posições das vítimas encontradas pelo robô"""
     def printVictims(self):
+        victims = self.getVictims()
+        print("\nPosicoes com vitimas: \n", victims, "\n")
+
+    """Função utilizada para debug, printa os sinais vitais das vítimas encontradas pelo robô"""
+    def printVitalSignals(self):
+        print("\nSinais vitais das vitimas: \n", self.victimsVitalSignals, "\n")
+
+    """Retorna um vetor com as vítimas encontradas pelo robô"""
+    def getVictims(self):
         victims = []
         for i in range(self.maxRows):
             for j in range(self.maxColumns):
                 if(self.mazeBeliefs[i][j] > 0): victims.append([i, j])
-        
-        print("\nPosicoes com vitimas: \n", victims, "\n")
-
-    def printVitalSignals(self):
-        print("\nSinais vitais das vitimas: \n", self.victimsVitalSignals, "\n")
-
+        return victims    
