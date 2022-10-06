@@ -4,6 +4,7 @@
 ### Executa raciocíni on-line: percebe --> [delibera] --> executa ação --> percebe --> ...
 import sys
 import os
+import math
 
 ## Importa Classes necessarias para o funcionamento
 from model import Model
@@ -294,6 +295,8 @@ class AgentExplorer:
     """
     def getTve(self):
         foundVictims = len(self.prob.getVictims())
+        if not (foundVictims):
+            return math.inf
         return (self.totalTime-self.time)/foundVictims
 
     """
