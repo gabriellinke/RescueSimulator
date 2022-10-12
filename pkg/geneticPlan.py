@@ -72,11 +72,12 @@ class GeneticPlan:
         self.popSize = 5000
 
         # número máximo de gerações
-        self.maxGens = 150
+        self.maxGens = 250
 
         # probabilidades de crossover e mutação
-        self.pCross = 0.8
-        self.pMut = 0.005
+        self.pCross = 0.9
+        self.pMut = 1 - math.pow(0.5, 1/len(self.victimsPositions))
+        # self.pMut = 0.01
 
         # executa do algoritmo genético para encontrar o caminho a seguir
         self.algoritmoGenetico()
@@ -307,12 +308,19 @@ class GeneticPlan:
         return d1, d2
     
     def mutate(self, cromossomo, indice):
-        outro = random.randrange(len(cromossomo))
-        while outro == indice:
+        if random.random() <= 0.067:
+            # tipo 1 de mutação, troca dois índices
             outro = random.randrange(len(cromossomo))
-        temp = cromossomo[indice]
-        cromossomo[indice] = cromossomo[outro]
-        cromossomo[outro] = temp
+            while outro == indice:
+                outro = random.randrange(len(cromossomo))
+            temp = cromossomo[indice]
+            cromossomo[indice] = cromossomo[outro]
+            cromossomo[outro] = temp
+        else:
+            # tipo 2 de mutação, o índice escolhido vai para o final da fila
+            temp = cromossomo[indice]
+            del cromossomo[indice]
+            cromossomo.append(temp)
 
     def algoritmoGenetico(self):
         populacao_inicial = [random.sample(range(len(self.victimsPositions)), k=len(self.victimsPositions)) for i in range(self.popSize)]
@@ -347,7 +355,10 @@ class GeneticPlan:
                     descendentes[i-1] = d1
                     descendentes[i] = d2
             
-            for i in range(len(descendentes)):
+            old_len = len(descendentes)
+            descendentes.extend(descendentes)
+            
+            for i in range(old_len):
                 for j in range(len(descendentes[i])):
                     sorteado = random.random()
                     if sorteado <= self.pMut:
@@ -356,15 +367,18 @@ class GeneticPlan:
 
             populacao.extend([(c, self.fitness(c)) for c in descendentes])
 
-            if self.maxGens - geracoes < 4 or geracoes < 4:
-                melhor, melhor_fitness = max(populacao, key=lambda tup: tup[1])
-                print(melhor_fitness, end="; ")
+            # if self.maxGens - geracoes < 6 or geracoes < 6:
+            #     melhor, melhor_fitness = max(populacao, key=lambda tup: tup[1])
+            #     print(melhor_fitness)
+                # print(len(populacao))
             # seleciona os N com maior fitness
             populacao.sort(key=lambda tup: tup[1])
-            del populacao[:self.popSize]
-            if self.maxGens - geracoes < 4 or geracoes < 4:
-                melhor, melhor_fitness = max(populacao, key=lambda tup: tup[1])
-                print(melhor_fitness)
+            del populacao[:-self.popSize]
+            # if self.maxGens - geracoes < 4 or geracoes < 4:
+            #     melhor, melhor_fitness = max(populacao, key=lambda tup: tup[1])
+            #     print(melhor_fitness)
+                # print(len(populacao))
+
 
         melhor, melhor_fitness = max(populacao, key=lambda tup: tup[1])
 
