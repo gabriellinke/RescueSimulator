@@ -15,6 +15,7 @@ from random import randint
 
 ## Importa o algoritmo para o plano
 from greedyPathPlan import GreedyPathPlan
+from geneticPlan import GeneticPlan
 
 ## Classe que define o Agente de resgate
 class AgentRescue:
@@ -61,7 +62,8 @@ class AgentRescue:
         self.costAll = 0
 
         ## Cria a instancia do plano para decidir o caminho a seguir
-        self.plan = GreedyPathPlan(self.prob, initial, time)
+        # self.plan = GreedyPathPlan(self.prob, initial, time)
+        self.plan = GeneticPlan(self.prob, initial, time)
 
         ## Adiciona o(s) planos a biblioteca de planos do agente
         self.libPlan = [self.plan]
